@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\StripeWebhookController;
 
 Route::get('/', function () {
     return view('welcome');

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Handlers\PaymentSucceededWebhookHandler;
 use Exception;
+use Stripe\Webhook;
 use Illuminate\Http\Request;
 use Stripe\Exception\SignatureVerificationException;
-use Stripe\Webhook;
+use App\Http\Handlers\PaymentSucceededWebhookHandler;
 
 class StripeWebhookController extends Controller
 {
