@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Clients\SupabaseClient;
+use App\Services\Auth\SupabaseGuard;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +14,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(SupabaseClient::class, function ($app) {
+            return new SupabaseClient;
+        });
     }
 
     /**
@@ -19,6 +24,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register Supabase guard
+        Auth::extend('supabase', function ($app, $name, array $config) {
+            return new SupabaseGuard(
+                $name,
+                Auth::createUserProvider($config['provider']),
+                $app['request'],
+                $app->make(SupabaseClient::class)
+            );
+        });
     }
 }
