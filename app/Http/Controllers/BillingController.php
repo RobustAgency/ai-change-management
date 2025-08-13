@@ -2,22 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use Stripe\Stripe;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserSubscriptionHistory;
+use Stripe\Checkout\Session as StripeSession;
 
 class BillingController extends Controller
 {
     public function subscribe(Plan $plan)
     {
-        // Will be fixed when supabase auth is implemented.
         $user = User::first();
 
-        return $user->newSubscription('default', $plan->stripe_price_id)
-            ->checkout([
-                'success_url' => url('/api/subscription-success'), // Pass frontend URL for success
-                'cancel_url' => url('/api/subscription-cancel'), // Pass frontend URL for cancel
-            ]);
+        Stripe::setApiKey(config('cashier.secret'));
+
+        $session = StripeSession::create([
+            'customer' => $user->stripe_id,
+            'payment_method_types' => ['card'],
+            'mode' => 'subscription',
+            'line_items' => [[
+                'price' => $plan->stripe_price_id,
+                'quantity' => 1,
+            ]],
+            'success_url' => url('/subscription-success'),
+            'cancel_url' => url('/subscription-cancel'),
+        ]);
+
+        return response()->json([
+            'url' => $session->url,
+        ]);
     }
 
     public function cancel()
