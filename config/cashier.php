@@ -133,4 +133,7 @@ return [
     'product' => [
         'id' => env('STRIPE_PRODUCT_ID'),
     ],
+
+    'redirect_url' => env('FRONTEND_REDIRECT_URL', '/'),
+    'subscription_name' => 'default',
 ];

@@ -2,62 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use Stripe\Stripe;
 use App\Models\Plan;
 use App\Models\User;
-use App\Models\UserSubscriptionHistory;
-use Stripe\Checkout\Session as StripeSession;
+use Illuminate\Http\JsonResponse;
+use App\Actions\ManageUserSubscription;
+use App\Actions\Stripe\CancelSubscription;
 
 class BillingController extends Controller
 {
-    public function subscribe(Plan $plan)
+    public function index(): JsonResponse
     {
-        $user = User::first();
-
-        Stripe::setApiKey(config('cashier.secret'));
-
-        $session = StripeSession::create([
-            'customer' => $user->stripe_id,
-            'payment_method_types' => ['card'],
-            'mode' => 'subscription',
-            'line_items' => [[
-                'price' => $plan->stripe_price_id,
-                'quantity' => 1,
-            ]],
-            'success_url' => url('/subscription-success'),
-            'cancel_url' => url('/subscription-cancel'),
-        ]);
+        $plans = Plan::where('active', true)->get();
 
         return response()->json([
-            'url' => $session->url,
+            'error' => false,
+            'message' => 'Plans retrieved successfully.',
+            'data' => $plans,
         ]);
     }
 
-    public function cancel()
+    public function subscribe(Plan $plan, ManageUserSubscription $manageUserSubscription)
+    {
+        // Temporary: replace with authenticated user once Supabase auth is implemented.
+        /** @var User $user */
+        $user = User::first();
+
+        $user->createOrGetStripeCustomer();
+
+        if (! $user->hasPaymentMethod()) {
+            return $user->redirectToBillingPortal(url("/plans/subscribe/{$plan->id}"));
+        }
+
+        return $manageUserSubscription->execute($user, $plan);
+    }
+
+    public function cancel(CancelSubscription $cancelSubscription)
     {
         // Will be fixed when supabase auth is implemented.
         $user = User::first();
 
-        $subscription = $user->subscription('default');
-
-        if ($subscription) {
-            $subscription->cancel();
-
-            UserSubscriptionHistory::where('user_id', $user->id)->update([
-                'status' => false,
-            ]);
-
-            return response()->json([
-                'error' => false,
-                'message' => 'Subscription canceled successfully.',
-                'data' => null,
-            ]);
-        }
-
-        return response()->json([
-            'error' => true,
-            'message' => 'No active subscription found.',
-            'data' => null,
-        ]);
+        return response()->json(
+            $cancelSubscription->execute($user)
+        );
     }
 }

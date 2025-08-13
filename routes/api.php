@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BillingController;
 
 Route::prefix('/plans')->controller(BillingController::class)->group(function () {
+    Route::get('', 'index');
     Route::get('subscribe/{plan}', 'subscribe');
     Route::get('cancel', 'cancel');
 

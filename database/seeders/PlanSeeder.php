@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\BillingCycle;
+use App\Enums\BillingCycle;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +32,7 @@ class PlanSeeder extends Seeder
                 'description' => 'Standard plan with additional features',
                 'limit' => 10,
                 'price' => 20.00,
-                'billing_cycle' => BillingCycle::Yearly,
+                'billing_cycle' => BillingCycle::Monthly,
                 'currency' => 'usd',
                 'stripe_price_id' => config('cashier.prices.standard'),
                 'active' => true,
@@ -44,7 +44,7 @@ class PlanSeeder extends Seeder
                 'description' => 'Premium plan with all features',
                 'limit' => 15,
                 'price' => 30.00,
-                'billing_cycle' => BillingCycle::Yearly,
+                'billing_cycle' => BillingCycle::Monthly,
                 'currency' => 'usd',
                 'stripe_price_id' => config('cashier.prices.premium'),
                 'active' => true,
