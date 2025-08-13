@@ -30,7 +30,13 @@ class BillingController extends Controller
         $user->createOrGetStripeCustomer();
 
         if (! $user->hasPaymentMethod()) {
-            return $user->redirectToBillingPortal(url("/plans/subscribe/{$plan->id}"));
+            $billingUrl = $user->billingPortalUrl(url("/plans/subscribe/{$plan->id}"));
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Please add a payment method to subscribe.',
+                'redirect_url' => $billingUrl,
+            ]);
         }
 
         return $manageUserSubscription->execute($user, $plan);
