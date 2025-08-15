@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
     public function show(): JsonResponse
     {
         /** @var User $user */
-        $user = User::find(1);
+        $user = Auth::user();
         $hasPaymentMethod = $user->hasPaymentMethod();
 
         $data = [

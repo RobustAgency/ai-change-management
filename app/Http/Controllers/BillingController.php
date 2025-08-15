@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use App\Actions\ManageUserSubscription;
 use App\Actions\Stripe\CancelSubscription;
 
@@ -24,7 +25,7 @@ class BillingController extends Controller
     public function addPaymentMethod(): JsonResponse
     {
         /** @var User $user */
-        $user = User::first();
+        $user = Auth::user();
         $user->createOrGetStripeCustomer();
         $billingUrl = $user->billingPortalUrl(url('/')); // Redirects it to the frontend url after adding payment method
 
@@ -37,9 +38,8 @@ class BillingController extends Controller
 
     public function subscribe(Plan $plan, ManageUserSubscription $manageUserSubscription)
     {
-        // Temporary: replace with authenticated user once Supabase auth is implemented.
         /** @var User $user */
-        $user = User::first();
+        $user = Auth::user();
 
         $user->createOrGetStripeCustomer();
 
@@ -58,11 +58,21 @@ class BillingController extends Controller
 
     public function cancel(CancelSubscription $cancelSubscription)
     {
-        // Will be fixed when supabase auth is implemented.
-        $user = User::first();
+        $user = Auth::user();
+        $success = $cancelSubscription->execute($user);
 
-        return response()->json(
-            $cancelSubscription->execute($user)
-        );
+        if (! $success) {
+            return response()->json([
+                'error' => true,
+                'message' => 'No active subscription found.',
+                'data' => null,
+            ], 404);
+        }
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Subscription cancelled successfully.',
+            'data' => null,
+        ]);
     }
 }

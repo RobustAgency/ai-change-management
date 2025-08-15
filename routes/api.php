@@ -22,6 +22,8 @@ Route::middleware(['auth:supabase', 'role:admin'])->group(function () {
             Route::get('', 'index');
             Route::get('/search', 'search');
             Route::get('/{user}', 'show');
+            Route::post('/{user}/approve', 'approve');
+            Route::post('/{user}/revoke-approval', 'revokeApproval');
         });
     });
 });

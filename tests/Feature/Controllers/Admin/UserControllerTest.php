@@ -171,4 +171,76 @@ class UserControllerTest extends TestCase
         $this->assertCount(1, $responseData['users']);
         $this->assertEquals('john.doe@example.com', $responseData['users'][0]['email']);
     }
+
+    public function test_admin_can_approve_user(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_approved' => false,
+        ]);
+        $this->assertFalse($user->is_approved);
+
+        $response = $this->actingAs($admin)->postJson("/api/admin/users/{$user->id}/approve");
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'error',
+            'message',
+            'user' => [
+                'id',
+                'name',
+                'email',
+                'is_approved',
+                'created_at',
+                'updated_at',
+            ],
+        ]);
+
+        $responseData = $response->json();
+        $this->assertFalse($responseData['error']);
+        $this->assertEquals('User approved successfully', $responseData['message']);
+        $this->assertTrue($responseData['user']['is_approved']);
+
+        $user->refresh();
+        $this->assertTrue($user->is_approved);
+    }
+
+    public function test_admin_can_revoke_user_approval(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_approved' => true,
+        ]);
+        $this->assertTrue($user->is_approved);
+
+        $response = $this->actingAs($admin)->postJson("/api/admin/users/{$user->id}/revoke-approval");
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'error',
+            'message',
+            'user' => [
+                'id',
+                'name',
+                'email',
+                'is_approved',
+                'created_at',
+                'updated_at',
+            ],
+        ]);
+
+        $responseData = $response->json();
+        $this->assertFalse($responseData['error']);
+        $this->assertEquals('User approval revoked successfully', $responseData['message']);
+        $this->assertFalse($responseData['user']['is_approved']);
+
+        $user->refresh();
+        $this->assertFalse($user->is_approved);
+    }
 }

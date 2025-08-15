@@ -7,28 +7,20 @@ use App\Models\UserSubscriptionHistory;
 
 class CancelSubscription
 {
-    public function execute(User $user): array
+    public function execute(User $user): bool
     {
         $subscriptionName = config('subscription.subscription_name');
         $subscription = $user->subscription($subscriptionName);
 
-        if ($subscription) {
-            $subscription->cancel();
-
-            UserSubscriptionHistory::where('user_id', $user->id)
-                ->update(['is_active' => false]);
-
-            return [
-                'error' => false,
-                'message' => 'Subscription canceled successfully.',
-                'data' => null,
-            ];
+        if (! $subscription) {
+            return false;
         }
 
-        return [
-            'error' => true,
-            'message' => 'No active subscription found.',
-            'data' => null,
-        ];
+        $subscription->cancel();
+
+        UserSubscriptionHistory::where('user_id', $user->id)
+            ->update(['is_active' => false]);
+
+        return true;
     }
 }
