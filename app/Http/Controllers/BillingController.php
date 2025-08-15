@@ -21,6 +21,20 @@ class BillingController extends Controller
         ]);
     }
 
+    public function addPaymentMethod(): JsonResponse
+    {
+        /** @var User $user */
+        $user = User::first();
+        $user->createOrGetStripeCustomer();
+        $billingUrl = $user->billingPortalUrl(url('/')); // Redirects it to the frontend url after adding payment method
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Redirecting to billing portal.',
+            'redirect_url' => $billingUrl,
+        ]);
+    }
+
     public function subscribe(Plan $plan, ManageUserSubscription $manageUserSubscription)
     {
         // Temporary: replace with authenticated user once Supabase auth is implemented.
@@ -33,8 +47,8 @@ class BillingController extends Controller
             $billingUrl = $user->billingPortalUrl(url("/plans/subscribe/{$plan->id}"));
 
             return response()->json([
-                'error' => false,
-                'message' => 'Please add a payment method to subscribe.',
+                'error' => true,
+                'message' => 'You must add a payment method to subscribe.',
                 'redirect_url' => $billingUrl,
             ]);
         }
