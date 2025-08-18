@@ -105,9 +105,8 @@ class UserControllerTest extends TestCase
 
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
-        $this->assertCount(1, $responseData['data']['users']);
         $this->assertEquals('Users retrieved successfully', $responseData['message']);
-        $this->assertEquals('John Doe', $responseData['data']['users'][0]['name']);
+        $this->assertEquals('John Doe', $responseData['data'][0]['name']);
     }
 
     public function test_admin_can_search_users_by_email(): void
@@ -129,8 +128,7 @@ class UserControllerTest extends TestCase
         $response->assertOk();
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
-        $this->assertCount(1, $responseData['data']['users']);
-        $this->assertEquals('john.doe@example.com', $responseData['data']['users'][0]['email']);
+        $this->assertEquals('john.doe@example.com', $responseData['data'][0]['email']);
     }
 
     public function test_admin_can_approve_user(): void
