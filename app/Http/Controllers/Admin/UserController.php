@@ -24,13 +24,13 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $perPage = $request->input('per_page', 15);
+        $perPage = $request->input('per_page', 10);
         $users = $this->userRepository->getPaginated($perPage);
 
         return response()->json([
             'error' => false,
             'message' => 'Users retrieved successfully',
-            'users' => UserResource::collection($users),
+            'users' => $users,
         ]);
     }
 
@@ -86,7 +86,7 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'User approval revoked successfully',
-            'user' => new UserResource($user),
+            'user' => null,
         ]);
     }
 }

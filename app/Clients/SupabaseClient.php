@@ -7,6 +7,7 @@ use Exception;
 use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use App\Enums\UserRole;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -280,8 +281,10 @@ class SupabaseClient
         ];
         // Extract user metadata if available
         if (isset($payload->user_metadata)) {
-            $userData['name'] = $payload->user_metadata->name ?? '';
+            $userData['name'] = $payload->user_metadata->full_name ?? '';
             $userData['email'] = $payload->user_metadata->email ?? $payload->email;
+            $userData['email_verified'] = $payload->user_metadata->email_verified ?? false;
+            $userData['role'] = $payload->user_metadata->role ?? UserRole::USER;
         }
 
         return $userData;
@@ -307,6 +310,7 @@ class SupabaseClient
                 'name' => $userData['name'],
                 'email' => $userData['email'],
                 'supabase_id' => $userData['supabase_id'],
+                'role' => $userData['role'],
             ]);
 
             Log::info('Created new user from Supabase', ['user_id' => $user->id]);

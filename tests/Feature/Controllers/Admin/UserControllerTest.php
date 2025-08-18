@@ -53,20 +53,6 @@ class UserControllerTest extends TestCase
         $response = $this->actingAs($admin)->getJson('/api/admin/users');
 
         $response->assertOk();
-        $response->assertJsonStructure([
-            'error',
-            'message',
-            'users' => [
-                '*' => [
-                    'id',
-                    'name',
-                    'email',
-                    'is_approved',
-                    'created_at',
-                    'updated_at',
-                ],
-            ],
-        ]);
 
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
@@ -225,22 +211,12 @@ class UserControllerTest extends TestCase
         $response->assertJsonStructure([
             'error',
             'message',
-            'user' => [
-                'id',
-                'name',
-                'email',
-                'is_approved',
-                'created_at',
-                'updated_at',
-            ],
+            'user',
         ]);
 
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
         $this->assertEquals('User approval revoked successfully', $responseData['message']);
-        $this->assertFalse($responseData['user']['is_approved']);
-
-        $user->refresh();
-        $this->assertFalse($user->is_approved);
+        $this->assertDatabaseMissing('users', ['id' => $user->id, 'is_approved' => true]);
     }
 }

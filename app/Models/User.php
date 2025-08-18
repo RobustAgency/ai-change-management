@@ -74,7 +74,8 @@ class User extends Authenticatable
             'name' => $attributes['name'],
             'email' => $attributes['email'],
             'supabase_id' => $attributes['supabase_id'],
-            'is_approved' => $attributes['is_approved'] ?? false,
+            'is_approved' => $attributes['role'] === 'admin' ? true : false,
+            'role' => UserRole::tryFrom(strtolower($attributes['role'] ?? '')) ?? UserRole::USER,
         ]);
 
         // Dispatch Registered event
@@ -103,10 +104,9 @@ class User extends Authenticatable
      */
     public function revokeApproval(): self
     {
-        $this->is_approved = false;
-        $this->save();
-
         event(new UserApprovalRevoked($this));
+
+        $this->delete();
 
         return $this;
     }
