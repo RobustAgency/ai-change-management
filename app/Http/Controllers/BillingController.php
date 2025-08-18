@@ -32,7 +32,7 @@ class BillingController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Redirecting to billing portal.',
-            'redirect_url' => $billingUrl,
+            'data' => ['redirect_url' => $billingUrl],
         ]);
     }
 
@@ -49,7 +49,7 @@ class BillingController extends Controller
             return response()->json([
                 'error' => true,
                 'message' => 'You must add a payment method to subscribe.',
-                'redirect_url' => $billingUrl,
+                'data' => ['redirect_url' => $billingUrl],
             ]);
         }
 
