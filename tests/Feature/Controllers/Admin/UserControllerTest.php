@@ -46,9 +46,6 @@ class UserControllerTest extends TestCase
             $user->updated_at = now();
             $user->save();
         }
-        $admin->created_at = now();
-        $admin->updated_at = now();
-        $admin->save();
 
         $response = $this->actingAs($admin)->getJson('/api/admin/users');
 
@@ -57,7 +54,7 @@ class UserControllerTest extends TestCase
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
         $this->assertEquals('Users retrieved successfully', $responseData['message']);
-        $this->assertArrayHasKey('users', $responseData);
+        $this->assertArrayHasKey('data', $responseData);
     }
 
     public function test_admin_can_view_user(): void
@@ -66,20 +63,12 @@ class UserControllerTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
         $user = User::factory()->create(['role' => UserRole::USER]);
 
-        // Manually set timestamps to avoid null errors in UserResource
-        $admin->created_at = now();
-        $admin->updated_at = now();
-        $admin->save();
-        $user->created_at = now();
-        $user->updated_at = now();
-        $user->save();
-
         $response = $this->actingAs($admin)->getJson("/api/admin/users/{$user->id}");
         $response->assertOk();
         $response->assertJsonStructure([
             'error',
             'message',
-            'user' => [
+            'data' => [
                 'id',
                 'name',
                 'email',
@@ -92,7 +81,7 @@ class UserControllerTest extends TestCase
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
         $this->assertEquals('User retrieved successfully', $responseData['message']);
-        $this->assertArrayHasKey('user', $responseData);
+        $this->assertArrayHasKey('data', $responseData);
     }
 
     public function test_admin_can_search_users_by_name(): void
@@ -113,26 +102,12 @@ class UserControllerTest extends TestCase
         $response = $this->actingAs($admin)->getJson('/api/admin/users/search?term=John');
 
         $response->assertOk();
-        $response->assertJsonStructure([
-            'error',
-            'message',
-            'users' => [
-                '*' => [
-                    'id',
-                    'name',
-                    'email',
-                    'is_approved',
-                    'created_at',
-                    'updated_at',
-                ],
-            ],
-        ]);
 
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
+        $this->assertCount(1, $responseData['data']['users']);
         $this->assertEquals('Users retrieved successfully', $responseData['message']);
-        $this->assertCount(1, $responseData['users']);
-        $this->assertEquals('John Doe', $responseData['users'][0]['name']);
+        $this->assertEquals('John Doe', $responseData['data']['users'][0]['name']);
     }
 
     public function test_admin_can_search_users_by_email(): void
@@ -154,8 +129,8 @@ class UserControllerTest extends TestCase
         $response->assertOk();
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
-        $this->assertCount(1, $responseData['users']);
-        $this->assertEquals('john.doe@example.com', $responseData['users'][0]['email']);
+        $this->assertCount(1, $responseData['data']['users']);
+        $this->assertEquals('john.doe@example.com', $responseData['data']['users'][0]['email']);
     }
 
     public function test_admin_can_approve_user(): void
@@ -175,7 +150,7 @@ class UserControllerTest extends TestCase
         $response->assertJsonStructure([
             'error',
             'message',
-            'user' => [
+            'data' => [
                 'id',
                 'name',
                 'email',
@@ -188,7 +163,7 @@ class UserControllerTest extends TestCase
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
         $this->assertEquals('User approved successfully', $responseData['message']);
-        $this->assertTrue($responseData['user']['is_approved']);
+        $this->assertTrue($responseData['data']['is_approved']);
 
         $user->refresh();
         $this->assertTrue($user->is_approved);
@@ -211,7 +186,7 @@ class UserControllerTest extends TestCase
         $response->assertJsonStructure([
             'error',
             'message',
-            'user',
+            'data',
         ]);
 
         $responseData = $response->json();

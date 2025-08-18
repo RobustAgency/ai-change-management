@@ -30,7 +30,9 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Users retrieved successfully',
-            'users' => $users,
+            'data' => [
+                'users' => $users,
+            ],
         ]);
     }
 
@@ -46,7 +48,9 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Users retrieved successfully',
-            'users' => UserResource::collection($users),
+            'data' => [
+                'users' => UserResource::collection($users),
+            ],
         ]);
     }
 
@@ -58,7 +62,7 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'User retrieved successfully',
-            'user' => new UserResource($user),
+            'data' => new UserResource($user),
         ]);
     }
 
@@ -72,7 +76,7 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'User approved successfully',
-            'user' => new UserResource($user),
+            'data' => new UserResource($user),
         ]);
     }
 
@@ -86,7 +90,7 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'User approval revoked successfully',
-            'user' => null,
+            'data' => null,
         ]);
     }
 }
