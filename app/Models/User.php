@@ -5,7 +5,10 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Enums\UserRole;
+use App\Events\UserCreated;
+use App\Events\UserApproved;
 use Laravel\Cashier\Billable;
+use App\Events\UserApprovalRevoked;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -40,6 +43,10 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $dispatchesEvents = [
+        'created' => UserCreated::class,
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -67,12 +74,40 @@ class User extends Authenticatable
             'name' => $attributes['name'],
             'email' => $attributes['email'],
             'supabase_id' => $attributes['supabase_id'],
-            'is_approved' => $attributes['is_approved'] ?? false,
+            'is_approved' => $attributes['role'] === 'admin' ? true : false,
+            'role' => UserRole::tryFrom(strtolower($attributes['role'] ?? '')) ?? UserRole::USER,
         ]);
 
         // Dispatch Registered event
         event(new Registered($user));
 
         return $user;
+    }
+
+    /**
+     * Approve the user account.
+     */
+    public function approve(): self
+    {
+        $this->is_approved = true;
+        $this->save();
+
+        event(new UserApproved($this));
+
+        return $this;
+    }
+
+    /**
+     * Revoke approval for the user account.
+     *
+     * @return $this
+     */
+    public function revokeApproval(): self
+    {
+        event(new UserApprovalRevoked($this));
+
+        $this->delete();
+
+        return $this;
     }
 }

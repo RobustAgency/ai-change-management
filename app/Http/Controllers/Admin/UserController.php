@@ -24,13 +24,13 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $perPage = $request->input('per_page', 15);
+        $perPage = $request->input('per_page', 10);
         $users = $this->userRepository->getPaginated($perPage);
 
         return response()->json([
             'error' => false,
             'message' => 'Users retrieved successfully',
-            'users' => UserResource::collection($users),
+            'data' => $users,
         ]);
     }
 
@@ -46,7 +46,7 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Users retrieved successfully',
-            'users' => UserResource::collection($users),
+            'data' => UserResource::collection($users),
         ]);
     }
 
@@ -58,7 +58,35 @@ class UserController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'User retrieved successfully',
-            'user' => new UserResource($user),
+            'data' => new UserResource($user),
+        ]);
+    }
+
+    /**
+     * Approve a user account.
+     */
+    public function approve(User $user): JsonResponse
+    {
+        $user->approve();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'User approved successfully',
+            'data' => new UserResource($user),
+        ]);
+    }
+
+    /**
+     * Revoke approval for a user account.
+     */
+    public function revokeApproval(User $user): JsonResponse
+    {
+        $user->revokeApproval();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'User approval revoked successfully',
+            'data' => null,
         ]);
     }
 }
