@@ -6,11 +6,21 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use App\Actions\ManageUserSubscription;
 use App\Actions\Stripe\CancelSubscription;
+use App\Actions\Stripe\ResumeSubscription;
+use App\Actions\Stripe\UpgradeSubscription;
+use App\Actions\Stripe\CreateNewSubscription;
+use App\Actions\Stripe\DowngradeSubscription;
 
 class BillingController extends Controller
 {
+    public function __construct(
+        private CreateNewSubscription $createNewSubscription,
+        private DowngradeSubscription $downgradeSubscription,
+        private ResumeSubscription $resumeSubscription,
+        private UpgradeSubscription $upgradeSubscription
+    ) {}
+
     public function index(): JsonResponse
     {
         $plans = Plan::where('active', true)->get();
@@ -22,24 +32,10 @@ class BillingController extends Controller
         ]);
     }
 
-    public function addPaymentMethod(): JsonResponse
+    public function subscribe(Plan $plan)
     {
         /** @var User $user */
-        $user = Auth::user();
-        $user->createOrGetStripeCustomer();
-        $billingUrl = $user->billingPortalUrl(url('/')); // Redirects it to the frontend url after adding payment method
-
-        return response()->json([
-            'error' => false,
-            'message' => 'Redirecting to billing portal.',
-            'data' => ['redirect_url' => $billingUrl],
-        ]);
-    }
-
-    public function subscribe(Plan $plan, ManageUserSubscription $manageUserSubscription)
-    {
-        /** @var User $user */
-        $user = Auth::user();
+        $user = User::find(2);
 
         $user->createOrGetStripeCustomer();
 
@@ -52,13 +48,72 @@ class BillingController extends Controller
                 'data' => ['redirect_url' => $billingUrl],
             ]);
         }
+        $subscription = $user->subscription('default');
 
-        return $manageUserSubscription->execute($user, $plan);
+        // New subscription creation
+        if (! $subscription || $subscription->ended()) {
+            $subscriptionCreated = $this->createNewSubscription->execute($user, $plan);
+
+            if ($subscriptionCreated) {
+                return response()->json([
+                    'error' => false,
+                    'message' => 'Subscription created successfully.',
+                    'data' => null,
+                ]);
+            }
+        }
+
+        // Existing subscription management
+        if ($subscription->onGracePeriod()) {
+            $subscriptionRenewed = $this->resumeSubscription->execute($user, $plan);
+
+            if ($subscriptionRenewed) {
+                return response()->json([
+                    'error' => false,
+                    'message' => 'Subscription renewed successfully.',
+                    'data' => null,
+                ]);
+            }
+        }
+
+        // Swap plan based on price difference
+        if ($subscription->active() && $subscription->stripe_price !== $plan->stripe_price_id) {
+            $currentPlan = Plan::where('stripe_price_id', $subscription->stripe_price)->first();
+
+            if ($currentPlan && $plan->price > $currentPlan->price) {
+                $planUpgraded = $this->upgradeSubscription->execute($user, $plan);
+
+                if ($planUpgraded) {
+                    return response()->json([
+                        'error' => false,
+                        'message' => 'Subscription upgraded successfully.',
+                        'data' => null,
+                    ]);
+                }
+            }
+
+            $planDowngraded = $this->downgradeSubscription->execute($user, $plan);
+
+            if ($planDowngraded) {
+                return response()->json([
+                    'error' => false,
+                    'message' => 'Subscription downgraded successfully.',
+                    'data' => null,
+                ]);
+            }
+
+        }
+
+        return response()->json([
+            'error' => true,
+            'message' => 'No changes made to the subscription.',
+            'data' => null,
+        ]);
     }
 
     public function cancel(CancelSubscription $cancelSubscription)
     {
-        $user = Auth::user();
+        $user = User::find(2);
         $success = $cancelSubscription->execute($user);
 
         if (! $success) {
@@ -74,5 +129,31 @@ class BillingController extends Controller
             'message' => 'Subscription cancelled successfully.',
             'data' => null,
         ]);
+    }
+
+    public function invoices()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $invoices = $user->invoices();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Invoices retrieved successfully.',
+            'data' => $invoices,
+        ]);
+    }
+
+    public function upcomingInvoice()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $invoice = $user->upcomingInvoice();
+
+        return response()->json([
+            'error' => false,
+            'data' => $invoice->toArray(),
+        ]);
+
     }
 }
