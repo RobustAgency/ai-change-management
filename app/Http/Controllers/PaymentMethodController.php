@@ -14,7 +14,10 @@ class PaymentMethodController extends Controller
         $user = Auth::user();
 
         $user->createOrGetStripeCustomer();
-        $billingUrl = $user->billingPortalUrl(url('/'));
+
+        /** @var string $redirectUrl */
+        $redirectUrl = url(config('cashier.redirect_url'));
+        $billingUrl = $user->billingPortalUrl($redirectUrl);
 
         return response()->json([
             'error' => false,
