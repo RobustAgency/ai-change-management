@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Plan;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Plan::class)->nullable()->constrained()->nullOnDelete();
             $table->uuid('supabase_id')->unique();
             $table->string('name');
             $table->string('email')->unique();
