@@ -121,6 +121,7 @@ class BillingController extends Controller
 
     public function cancel(CancelSubscription $cancelSubscription)
     {
+        /** @var User $user */
         $user = Auth::user();
         $success = $cancelSubscription->execute($user);
 
@@ -131,6 +132,8 @@ class BillingController extends Controller
                 'data' => null,
             ], 404);
         }
+
+        $user->update(['plan_id' => null]);
 
         return response()->json([
             'error' => false,
