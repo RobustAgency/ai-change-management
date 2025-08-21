@@ -87,9 +87,7 @@ class ProfileControllerTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/profile');
         $response->assertStatus(403);
         $response->assertJson([
-            'error' => true,
-            'message' => 'Your account is pending approval by an administrator',
-            'code' => 'account_approval_pending',
+            'message' => 'Your account is not approved yet. Please contact support.',
         ]);
     }
 }

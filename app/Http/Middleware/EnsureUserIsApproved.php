@@ -20,11 +20,7 @@ class EnsureUserIsApproved
         $user = $request->user();
 
         if (! $user->is_approved) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Your account is pending approval by an administrator',
-                'code' => 'account_approval_pending',
-            ], 403);
+            abort(403, 'Your account is not approved yet. Please contact support.');
         }
 
         return $next($request);
