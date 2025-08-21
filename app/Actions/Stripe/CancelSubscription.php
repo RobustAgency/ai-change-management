@@ -9,8 +9,7 @@ class CancelSubscription
     public function execute(User $user): bool
     {
         $subscription = $user->subscription('default');
-
-        if (! $subscription || ! $subscription->canceled()) {
+        if (! $subscription || $subscription->canceled()) {
             return false;
         }
 
