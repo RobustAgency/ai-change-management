@@ -152,11 +152,10 @@ class BillingController extends Controller
 
         foreach ($stripeInvoices as $stripeInvoice) {
             $invoice = $stripeInvoice->asStripeInvoice();
-
             $generateInvoices[] = [
                 'invoice_number' => $invoice->number,
                 'created_at' => Carbon::createFromTimestamp($invoice->created)->format('Y-m-d H:i:s'),
-                'amount_paid' => $invoice->amount_paid,
+                'amount_paid' => $invoice->amount_paid / 100,
                 'status' => $invoice->status,
                 'downloadUrl' => $invoice->invoice_pdf,
             ];
@@ -187,7 +186,7 @@ class BillingController extends Controller
         $upcomingInvoice = [
             'invoice_number' => $stripeInvoice->number ?? null,
             'created_at' => Carbon::createFromTimestamp($stripeInvoice->created)->format('Y-m-d H:i:s'),
-            'amount_due' => $stripeInvoice->amount_due,
+            'amount_due' => $stripeInvoice->amount_due / 100,
             'status' => $stripeInvoice->status ?? 'upcoming',
             'download_url' => $invoice->invoice_pdf ?? null,
         ];
