@@ -9,14 +9,6 @@ use App\Http\Controllers\PaymentMethodController;
 
 Route::post('/auth/login', [SupabaseController::class, 'login']);
 
-Route::get('/subscription-success', function () {
-    return '<h1>Subscription Successful</h1>';
-});
-
-Route::get('/subscription-cancel', function () {
-    return '<h1>Subscription Canceled</h1>';
-});
-
 Route::middleware(['auth:supabase', 'role:admin'])->group(function () {
     Route::prefix('/admin')->group(function () {
         Route::prefix('/users')->controller(UserController::class)->group(function () {

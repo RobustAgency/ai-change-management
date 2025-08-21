@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +36,7 @@ class BillingController extends Controller
     public function subscribe(Plan $plan)
     {
         /** @var User $user */
-        $user = User::find(2);
+        $user = Auth::user();
 
         $user->createOrGetStripeCustomer();
 
@@ -53,8 +54,9 @@ class BillingController extends Controller
         // New subscription creation
         if (! $subscription || $subscription->ended()) {
             $subscriptionCreated = $this->createNewSubscription->execute($user, $plan);
-
             if ($subscriptionCreated) {
+                $user->update(['plan_id' => $plan->id]);
+
                 return response()->json([
                     'error' => false,
                     'message' => 'Subscription created successfully.',
@@ -64,10 +66,12 @@ class BillingController extends Controller
         }
 
         // Existing subscription management
-        if ($subscription->onGracePeriod()) {
+        if ($subscription->onGracePeriod() && $plan->isSameAsSubscription($subscription)) {
             $subscriptionRenewed = $this->resumeSubscription->execute($user, $plan);
 
             if ($subscriptionRenewed) {
+                $user->update(['plan_id' => $plan->id]);
+
                 return response()->json([
                     'error' => false,
                     'message' => 'Subscription renewed successfully.',
@@ -77,13 +81,15 @@ class BillingController extends Controller
         }
 
         // Swap plan based on price difference
-        if ($subscription->active() && $subscription->stripe_price !== $plan->stripe_price_id) {
-            $currentPlan = Plan::where('stripe_price_id', $subscription->stripe_price)->first();
+        if ($subscription->active() && ! $plan->isSameAsSubscription($subscription)) {
+            $currentPlan = Plan::currentPlanFor($subscription);
 
-            if ($currentPlan && $plan->price > $currentPlan->price) {
+            if ($currentPlan && $plan->isUpgradeTo($plan)) {
                 $planUpgraded = $this->upgradeSubscription->execute($user, $plan);
 
                 if ($planUpgraded) {
+                    $user->update(['plan_id' => $plan->id]);
+
                     return response()->json([
                         'error' => false,
                         'message' => 'Subscription upgraded successfully.',
@@ -95,6 +101,8 @@ class BillingController extends Controller
             $planDowngraded = $this->downgradeSubscription->execute($user, $plan);
 
             if ($planDowngraded) {
+                $user->update(['plan_id' => $plan->id]);
+
                 return response()->json([
                     'error' => false,
                     'message' => 'Subscription downgraded successfully.',
@@ -113,7 +121,7 @@ class BillingController extends Controller
 
     public function cancel(CancelSubscription $cancelSubscription)
     {
-        $user = User::find(2);
+        $user = Auth::user();
         $success = $cancelSubscription->execute($user);
 
         if (! $success) {
@@ -135,12 +143,26 @@ class BillingController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $invoices = $user->invoices();
+        $stripeInvoices = $user->invoices();
+
+        $generateInvoices = [];
+
+        foreach ($stripeInvoices as $stripeInvoice) {
+            $invoice = $stripeInvoice->asStripeInvoice();
+
+            $generateInvoices[] = [
+                'invoice_number' => $invoice->number,
+                'created_at' => Carbon::createFromTimestamp($invoice->created)->format('Y-m-d H:i:s'),
+                'amount_paid' => $invoice->amount_paid,
+                'status' => $invoice->status,
+                'downloadUrl' => $invoice->invoice_pdf,
+            ];
+        }
 
         return response()->json([
             'error' => false,
             'message' => 'Invoices retrieved successfully.',
-            'data' => $invoices,
+            'data' => $generateInvoices,
         ]);
     }
 
@@ -150,9 +172,27 @@ class BillingController extends Controller
         $user = Auth::user();
         $invoice = $user->upcomingInvoice();
 
+        if (! $invoice) {
+            return response()->json([
+                'error' => true,
+                'message' => 'No upcoming invoice found.',
+                'data' => null,
+            ]);
+        }
+
+        $stripeInvoice = $invoice->asStripeInvoice();
+        $upcomingInvoice = [
+            'invoice_number' => $stripeInvoice->number ?? null,
+            'created_at' => Carbon::createFromTimestamp($stripeInvoice->created)->format('Y-m-d H:i:s'),
+            'amount_due' => $stripeInvoice->amount_due,
+            'status' => $stripeInvoice->status ?? 'upcoming',
+            'download_url' => $invoice->invoice_pdf ?? null,
+        ];
+
         return response()->json([
             'error' => false,
-            'data' => $invoice->toArray(),
+            'message' => 'Upcoming invoice retrieved successfully.',
+            'data' => $upcomingInvoice,
         ]);
 
     }

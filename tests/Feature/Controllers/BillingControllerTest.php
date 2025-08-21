@@ -86,16 +86,22 @@ class BillingControllerTest extends TestCase
             'role' => UserRole::USER,
             'is_approved' => true,
         ]);
-        $mockInvoice = (object) [
-            'id' => 'in_test_123',
+
+        // Fake Stripe invoice object
+        $stripeInvoice = (object) [
             'number' => 'INV-001',
+            'created' => now()->timestamp,
             'amount_paid' => 1000,
             'status' => 'paid',
             'invoice_pdf' => 'http://fake-invoice.pdf',
         ];
 
+        // Mock Cashier Invoice wrapper
+        $cashierInvoiceMock = Mockery::mock(\Laravel\Cashier\Invoice::class);
+        $cashierInvoiceMock->shouldReceive('asStripeInvoice')->andReturn($stripeInvoice);
+
         $userMock = Mockery::mock($user)->makePartial();
-        $userMock->shouldReceive('invoices')->once()->andReturn([$mockInvoice]);
+        $userMock->shouldReceive('invoices')->once()->andReturn([$cashierInvoiceMock]);
 
         $this->app->instance(User::class, $userMock);
 
@@ -113,19 +119,22 @@ class BillingControllerTest extends TestCase
             'role' => UserRole::USER,
             'is_approved' => true,
         ]);
-        $mockUpcomingInvoice = new class
-        {
-            public function toArray(): array
-            {
-                return [
-                    'id' => 'in_upcoming_123',
-                    'amount_due' => 1500,
-                    'status' => 'open',
-                ];
-            }
-        };
+
+        // Fake Stripe upcoming invoice object
+        $stripeUpcomingInvoice = (object) [
+            'number' => 'INV-UPCOMING-001',
+            'created' => now()->timestamp,
+            'amount_due' => 1500,
+            'status' => 'open',
+            'invoice_pdf' => null,
+        ];
+
+        // Mock Cashier Invoice wrapper
+        $upcomingInvoiceMock = Mockery::mock(\Laravel\Cashier\Invoice::class);
+        $upcomingInvoiceMock->shouldReceive('asStripeInvoice')->andReturn($stripeUpcomingInvoice);
+
         $userMock = Mockery::mock($user)->makePartial();
-        $userMock->shouldReceive('upcomingInvoice')->once()->andReturn($mockUpcomingInvoice);
+        $userMock->shouldReceive('upcomingInvoice')->once()->andReturn($upcomingInvoiceMock);
 
         $this->app->instance(User::class, $userMock);
 
@@ -133,7 +142,12 @@ class BillingControllerTest extends TestCase
 
         $response->assertOk()->assertJson([
             'error' => false,
-            'data' => $mockUpcomingInvoice->toArray(),
+            'message' => 'Upcoming invoice retrieved successfully.',
+            'data' => [
+                'invoice_number' => 'INV-UPCOMING-001',
+                'amount_due' => 1500,
+                'status' => 'open',
+            ],
         ]);
     }
 }

@@ -135,5 +135,4 @@ return [
     ],
 
     'redirect_url' => env('FRONTEND_REDIRECT_URL', '/'),
-    'subscription_name' => 'default',
 ];

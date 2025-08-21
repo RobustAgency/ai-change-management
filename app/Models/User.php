@@ -31,6 +31,7 @@ class User extends Authenticatable
         'supabase_id',
         'role',
         'password',
+        'plan_id',
     ];
 
     /**
