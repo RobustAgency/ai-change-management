@@ -39,14 +39,7 @@ class UserControllerTest extends TestCase
         Notification::fake();
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
 
-        $users = User::factory()->count(5)->create(['role' => UserRole::USER]);
-
-        foreach ($users as $user) {
-            $user->created_at = now();
-            $user->updated_at = now();
-            $user->save();
-        }
-
+        User::factory()->count(5)->create(['role' => UserRole::USER]);
         $response = $this->actingAs($admin)->getJson('/api/admin/users');
 
         $response->assertOk();
