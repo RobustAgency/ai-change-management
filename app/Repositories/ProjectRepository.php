@@ -9,7 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class ProjectRepository
 {
     /**
-     * Get paginated list of users with specified relations.
+     * Get paginated list of projects with specified filters.
      *
      * @return \Illuminate\Pagination\LengthAwarePaginator<int, Project>
      */

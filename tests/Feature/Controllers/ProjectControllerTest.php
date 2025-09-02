@@ -68,19 +68,19 @@ class ProjectControllerTest extends TestCase
 
         Project::factory()->create([
             'user_id' => $user->id,
-            'status' => 'draft',
+            'status' => ProjectStatus::Draft->value,
         ]);
 
         Project::factory()->create([
             'user_id' => $user->id,
-            'status' => 'completed',
+            'status' => ProjectStatus::Completed->value,
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/projects?status=draft');
+        $response = $this->actingAs($user)->getJson('/api/projects?status='.ProjectStatus::Draft->value);
 
         $response->assertStatus(200);
         $this->assertCount(1, $response->json('data.data'));
-        $this->assertEquals('draft', $response->json('data.data.0.status'));
+        $this->assertEquals(ProjectStatus::Draft->value, $response->json('data.data.0.status'));
     }
 
     public function test_user_can_store_project(): void
