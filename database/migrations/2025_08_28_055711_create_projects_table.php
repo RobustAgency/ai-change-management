@@ -18,10 +18,14 @@ return new class extends Migration
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->dateTime('launch_date')->nullable();
-            $table->json('target_audiences')->nullable();
-            $table->text('key_messages')->nullable();
-            $table->text('benefits')->nullable();
-            $table->text('timeline')->nullable();
+            $table->string('type')->nullable();
+            $table->string('sponsor_name')->nullable();
+            $table->string('sponsor_title')->nullable();
+            $table->text('business_goals')->nullable();
+            $table->text('summary')->nullable();
+            $table->text('expected_outcomes')->nullable();
+            $table->json('stakeholders')->nullable();
+            $table->string('client_organization')->nullable();
             $table->string('status')->default(ProjectStatus::Draft);
             $table->timestamps();
         });

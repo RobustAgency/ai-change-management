@@ -41,7 +41,9 @@ Route::middleware(['auth:supabase', 'role:user', 'user.approved'])->group(functi
 
     Route::prefix('projects')->controller(ProjectController::class)->group(function () {
         Route::get('', 'index');
+        Route::post('', 'store');
         Route::get('{project}', 'show')->can('view', 'project');
+        Route::post('{project}', 'update')->can('update', 'project');
         Route::delete('{project}', 'destroy')->can('delete', 'project');
     });
 });

@@ -36,16 +36,16 @@ class ProjectRepository
         return $query->latest()->paginate($perPage);
     }
 
-    public function createForUser(User $user, array $data): Project
+    public function createForUser(User $user, array $projectData): Project
     {
-        $data['user_id'] = $user->id;
+        $projectData['user_id'] = $user->id;
 
-        return Project::create($data);
+        return Project::create($projectData);
     }
 
-    public function update(Project $project, array $data): Project
+    public function update(Project $project, array $projectData): Project
     {
-        $project->update($data);
+        $project->update($projectData);
 
         return $project;
     }
