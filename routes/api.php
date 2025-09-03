@@ -45,5 +45,6 @@ Route::middleware(['auth:supabase', 'role:user', 'user.approved'])->group(functi
         Route::get('{project}', 'show')->can('view', 'project');
         Route::post('{project}', 'update')->can('update', 'project');
         Route::delete('{project}', 'destroy')->can('delete', 'project');
+        Route::get('dispatch-job/{project}', 'dispatchJob');
     });
 });

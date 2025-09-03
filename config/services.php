@@ -41,4 +41,9 @@ return [
         'jwt_secret' => env('SUPABASE_JWT_SECRET'),
     ],
 
+    'openai' => [
+        'secret' => env('OPENAI_SECRET'),
+        'model' => env('OPENAI_MODEL', 'gpt-4-turbo'),
+    ],
+
 ];

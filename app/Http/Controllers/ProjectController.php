@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Jobs\GenerateProjectContentJob;
 use App\Repositories\ProjectRepository;
 use App\Http\Requests\User\StoreProjectRequest;
 use App\Http\Requests\User\UpdateProjectRequest;
@@ -56,6 +57,8 @@ class ProjectController extends Controller
      */
     public function show(Project $project): JsonResponse
     {
+        $project->load('media');
+
         return response()->json([
             'error' => false,
             'message' => 'Project retrieved successfully',
@@ -87,6 +90,16 @@ class ProjectController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Project deleted successfully',
+        ]);
+    }
+
+    public function dispatchJob(Project $project): JsonResponse
+    {
+        GenerateProjectContentJob::dispatch($project);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Job dispatched successfully',
         ]);
     }
 }
