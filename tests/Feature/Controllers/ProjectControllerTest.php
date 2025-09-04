@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\Project;
 use App\Enums\ProjectStatus;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,6 +86,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_store_project(): void
     {
+        Queue::fake();
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
 
         $payload = [
@@ -119,6 +121,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_store_project_with_logo(): void
     {
+        Queue::fake();
         Storage::fake('public');
 
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
@@ -158,6 +161,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_update_project(): void
     {
+        Queue::fake();
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
         $project = Project::factory()->create(['user_id' => $user->id, 'name' => 'Old Name', 'launch_date' => now()->toDateTimeString()]);
 
@@ -184,6 +188,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_replace_project_logo_on_update(): void
     {
+        Queue::fake();
         Storage::fake('public');
 
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);

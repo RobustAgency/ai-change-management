@@ -15,9 +15,8 @@ class ProjectContentGenerator
     /**
      * Generate structured content for a Project using the LLM.
      */
-    public function generateForProject(Project $project): array
+    public function generateContent(Project $project): array
     {
-        \info('Generating content for project ID: '.$project->id);
         $prompt = $this->promptBuilder->build($project);
 
         $messages = [
@@ -25,20 +24,16 @@ class ProjectContentGenerator
         ];
 
         $content = $this->openAi->chat($messages);
-        \info('The response from ai is: '.$content);
         $parsed = json_decode($content, true);
-        \info('Parsed content for project ID: '.$project->id.': '.json_encode($parsed));
+
         if (! is_array($parsed)) {
             $parsed = $this->extractJson($content);
         }
 
         $keyMessages = $parsed['key_messages'] ?? [];
         $audienceVariations = $parsed['audience_variations'] ?? [];
-        \info('Extracted key messages for project ID: '.$project->id.': '.json_encode($keyMessages));
-        \info('Extracted audience variations for project ID: '.$project->id.': '.json_encode($audienceVariations));
 
         return [
-            'prompt' => $prompt,
             'key_messages' => $keyMessages,
             'audience_variations' => $audienceVariations,
         ];

@@ -8,11 +8,9 @@ class ProjectPromptBuilder
 {
     public function build(Project $project): string
     {
-        \info('Building prompt for project ID: '.$project->id);
         $template = config('prompts.project_generation');
 
         $stakeholders = $this->formatStakeholders($project->stakeholders);
-        \info('Formatted stakeholders for project ID: '.$project->id);
         $replacements = [
             ':title' => $project->name ?? '',
             ':launch_date' => $project->launch_date?->toDateTimeString() ?? '',

@@ -44,6 +44,7 @@ class ProjectController extends Controller
         if ($request->hasFile('client_logo')) {
             $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logo');
         }
+        GenerateProjectContentJob::dispatch($project);
 
         return response()->json([
             'error' => false,
@@ -75,6 +76,7 @@ class ProjectController extends Controller
         if ($request->hasFile('client_logo')) {
             $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logo');
         }
+        GenerateProjectContentJob::dispatch($project);
 
         return response()->json([
             'error' => false,
