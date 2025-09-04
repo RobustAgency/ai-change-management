@@ -94,14 +94,4 @@ class ProjectController extends Controller
             'message' => 'Project deleted successfully',
         ]);
     }
-
-    public function dispatchJob(Project $project): JsonResponse
-    {
-        GenerateProjectContentJob::dispatch($project);
-
-        return response()->json([
-            'error' => false,
-            'message' => 'Job dispatched successfully',
-        ]);
-    }
 }

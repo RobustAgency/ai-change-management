@@ -30,6 +30,5 @@ class OpenAi
         }
 
         return $responseData['choices'][0]['message']['content'];
-
     }
 }
