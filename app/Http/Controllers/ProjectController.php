@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\ProjectResource;
 use App\Jobs\GenerateProjectContentJob;
 use App\Repositories\ProjectRepository;
 use App\Http\Requests\User\StoreProjectRequest;
@@ -23,7 +24,6 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $validated = $request->validated();
-        $perPage = $validated['per_page'] ?? 10;
         $projects = $this->projectRepository->getFilteredProjects($user, $validated);
 
         return response()->json([
@@ -42,7 +42,7 @@ class ProjectController extends Controller
         $project = $this->projectRepository->createForUser($user, $validated);
 
         if ($request->hasFile('client_logo')) {
-            $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logo');
+            $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logos');
         }
         GenerateProjectContentJob::dispatch($project);
 
@@ -63,7 +63,7 @@ class ProjectController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Project retrieved successfully',
-            'data' => $project,
+            'data' => new ProjectResource($project),
         ]);
     }
 
@@ -74,7 +74,7 @@ class ProjectController extends Controller
         $project = $this->projectRepository->update($project, $validated);
 
         if ($request->hasFile('client_logo')) {
-            $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logo');
+            $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logos');
         }
         GenerateProjectContentJob::dispatch($project);
 

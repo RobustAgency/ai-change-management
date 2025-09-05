@@ -58,11 +58,11 @@ class Project extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('client_logo')->singleFile();
+        $this->addMediaCollection('client_logos')->singleFile();
     }
 
     public function getClientLogoUrlAttribute(): ?string
     {
-        return $this->getFirstMediaUrl('client_logo') ?: null;
+        return $this->getFirstMediaUrl('client_logos') ?: null;
     }
 }
