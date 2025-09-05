@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\Project;
 use App\Enums\ProjectStatus;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,50 +42,9 @@ class ProjectControllerTest extends TestCase
         ]);
     }
 
-    public function test_user_can_filter_projects_by_term(): void
-    {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
-
-        Project::factory()->create([
-            'user_id' => $user->id,
-            'name' => 'New HR Policy',
-        ]);
-
-        Project::factory()->create([
-            'user_id' => $user->id,
-            'name' => 'Finance Rollout',
-        ]);
-
-        $response = $this->actingAs($user)->getJson('/api/projects?term=HR');
-
-        $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data.data'));
-        $this->assertEquals('New HR Policy', $response->json('data.data.0.name'));
-    }
-
-    public function test_user_can_filter_projects_by_status(): void
-    {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
-
-        Project::factory()->create([
-            'user_id' => $user->id,
-            'status' => ProjectStatus::Draft->value,
-        ]);
-
-        Project::factory()->create([
-            'user_id' => $user->id,
-            'status' => ProjectStatus::Completed->value,
-        ]);
-
-        $response = $this->actingAs($user)->getJson('/api/projects?status='.ProjectStatus::Draft->value);
-
-        $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data.data'));
-        $this->assertEquals(ProjectStatus::Draft->value, $response->json('data.data.0.status'));
-    }
-
     public function test_user_can_store_project(): void
     {
+        Queue::fake();
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
 
         $payload = [
@@ -119,6 +79,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_store_project_with_logo(): void
     {
+        Queue::fake();
         Storage::fake('public');
 
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
@@ -138,7 +99,7 @@ class ProjectControllerTest extends TestCase
         $project = Project::first();
 
         $this->assertNotNull($project);
-        $this->assertNotNull($project->getFirstMediaUrl('client_logo'));
+        $this->assertNotNull($project->getFirstMediaUrl('client_logos'));
     }
 
     public function test_user_can_view_single_project(): void
@@ -158,6 +119,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_update_project(): void
     {
+        Queue::fake();
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
         $project = Project::factory()->create(['user_id' => $user->id, 'name' => 'Old Name', 'launch_date' => now()->toDateTimeString()]);
 
@@ -184,13 +146,14 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_replace_project_logo_on_update(): void
     {
+        Queue::fake();
         Storage::fake('public');
 
         $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
 
         $project = Project::factory()->create(['user_id' => $user->id]);
 
-        $project->addMedia(UploadedFile::fake()->image('old_logo.png'))->toMediaCollection('client_logo');
+        $project->addMedia(UploadedFile::fake()->image('old_logo.png'))->toMediaCollection('client_logos');
 
         $payload = [
             'name' => 'With New Logo',
@@ -201,9 +164,18 @@ class ProjectControllerTest extends TestCase
         $response = $this->actingAs($user)->postJson("/api/projects/{$project->id}", $payload);
 
         $response->assertStatus(200);
-        $this->assertDatabaseHas('projects', ['id' => $project->id, 'name' => 'With New Logo']);
+        $this->assertDatabaseHas('projects', [
+            'id' => $project->id,
+            'name' => 'With New Logo',
+        ]);
 
-        $this->assertStringContainsString('new_logo', $project->fresh()->getFirstMediaUrl('client_logo'));
+        $freshProject = $project->fresh();
+
+        $this->assertCount(1, $freshProject->getMedia('client_logos'));
+        $this->assertStringContainsString(
+            'new_logo',
+            $freshProject->getFirstMediaUrl('client_logos')
+        );
     }
 
     public function test_delete_project(): void

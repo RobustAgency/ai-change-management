@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Clients\SupabaseClient;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
@@ -79,8 +80,9 @@ class UserController extends Controller
     /**
      * Revoke approval for a user account.
      */
-    public function revokeApproval(User $user): JsonResponse
+    public function revokeApproval(User $user, SupabaseClient $supabaseClient): JsonResponse
     {
+
         $user->revokeApproval();
 
         return response()->json([
