@@ -71,12 +71,19 @@ class User extends Authenticatable
      */
     public static function createFromSupabase(array $attributes): self
     {
+        $role = $attributes['role'] ?? null;
+        if ($role instanceof UserRole) {
+            $roleValue = $role->value;
+        } else {
+            $roleValue = is_string($role) ? strtolower($role) : '';
+        }
+
         $user = self::create([
             'name' => $attributes['name'],
             'email' => $attributes['email'],
             'supabase_id' => $attributes['supabase_id'],
             'is_approved' => $attributes['role'] === 'admin' ? true : false,
-            'role' => UserRole::tryFrom(strtolower($attributes['role'] ?? '')) ?? UserRole::USER,
+            'role' => UserRole::tryFrom($roleValue) ?? UserRole::USER,
         ]);
 
         // Dispatch Registered event
