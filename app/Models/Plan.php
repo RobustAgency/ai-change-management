@@ -41,8 +41,8 @@ class Plan extends Model
         return self::where('stripe_price_id', $subscription->stripe_price)->first();
     }
 
-    public function isUpgradeTo(Plan $currentPlan): bool
+    public function isUpgradeTo(Plan $otherPlan): bool
     {
-        return $this->price > $currentPlan->price;
+        return $this->price > $otherPlan->price;
     }
 }
