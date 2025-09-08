@@ -10,13 +10,11 @@ use Illuminate\Support\Facades\Auth;
 use App\Actions\Stripe\CancelSubscription;
 use App\Actions\Stripe\ResumeSubscription;
 use App\Actions\Stripe\UpgradeSubscription;
-use App\Actions\Stripe\CreateNewSubscription;
 use App\Actions\Stripe\DowngradeSubscription;
 
 class BillingController extends Controller
 {
     public function __construct(
-        // private CreateNewSubscription $createNewSubscription,
         private DowngradeSubscription $downgradeSubscription,
         private ResumeSubscription $resumeSubscription,
         private UpgradeSubscription $upgradeSubscription
