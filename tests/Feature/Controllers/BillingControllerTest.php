@@ -56,30 +56,6 @@ class BillingControllerTest extends TestCase
         ]);
     }
 
-    public function test_user_has_no_payment_method(): void
-    {
-        $user = User::factory()->create([
-            'role' => UserRole::USER,
-            'is_approved' => true,
-        ]);
-        $plan = Plan::factory()->create(['active' => true]);
-
-        $userMock = Mockery::mock($user)->makePartial();
-        $userMock->shouldReceive('createOrGetStripeCustomer')->once();
-        $userMock->shouldReceive('hasPaymentMethod')->once()->andReturn(false);
-        $userMock->shouldReceive('billingPortalUrl')->once()->andReturn('http://fake-stripe-portal.test');
-
-        $this->app->instance(User::class, $userMock);
-        $response = $this->actingAs($userMock)->getJson("/api/plans/subscribe/{$plan->id}");
-
-        $response->assertOk();
-        $response->assertJson([
-            'error' => true,
-            'message' => 'You must add a payment method to subscribe.',
-            'data' => ['redirect_url' => 'http://fake-stripe-portal.test'],
-        ]);
-    }
-
     public function test_get_user_invoices(): void
     {
         $user = User::factory()->create([

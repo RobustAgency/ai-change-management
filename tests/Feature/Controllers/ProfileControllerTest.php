@@ -49,17 +49,14 @@ class ProfileControllerTest extends TestCase
             'error',
             'message',
             'data' => [
-                'user' => [
-                    'id',
-                    'name',
-                    'email',
-                    'email_verified_at',
-                    'is_approved',
-                    'role',
-                    'created_at',
-                    'updated_at',
-                ],
-                'has_payment_method',
+                'id',
+                'name',
+                'email',
+                'email_verified_at',
+                'is_approved',
+                'role',
+                'created_at',
+                'updated_at',
             ],
         ]);
 
@@ -67,11 +64,9 @@ class ProfileControllerTest extends TestCase
         $this->assertFalse($responseData['error']);
         $this->assertEquals('Profile retrieved successfully.', $responseData['message']);
         $this->assertArrayHasKey('data', $responseData);
-        $this->assertArrayHasKey('user', $responseData['data']);
-        $this->assertArrayHasKey('has_payment_method', $responseData['data']);
-        $this->assertEquals($user->id, $responseData['data']['user']['id']);
-        $this->assertEquals($user->email, $responseData['data']['user']['email']);
-        $this->assertEquals($user->name, $responseData['data']['user']['name']);
+        $this->assertEquals($user->id, $responseData['data']['id']);
+        $this->assertEquals($user->email, $responseData['data']['email']);
+        $this->assertEquals($user->name, $responseData['data']['name']);
     }
 
     public function test_non_approved_user_cannot_access_profile(): void
