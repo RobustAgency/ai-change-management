@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Clients\SupabaseClient;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
@@ -64,30 +63,29 @@ class UserController extends Controller
     }
 
     /**
-     * Approve a user account.
+     * Activate a user account.
      */
-    public function approve(User $user): JsonResponse
+    public function activate(User $user): JsonResponse
     {
-        $user->approve();
+        $user->activate();
 
         return response()->json([
             'error' => false,
-            'message' => 'User approved successfully',
+            'message' => 'User activated successfully',
             'data' => new UserResource($user),
         ]);
     }
 
     /**
-     * Revoke approval for a user account.
+     * Deactivate a user account.
      */
-    public function revokeApproval(User $user, SupabaseClient $supabaseClient): JsonResponse
+    public function deactivate(User $user): JsonResponse
     {
-
-        $user->revokeApproval();
+        $user->deactivate();
 
         return response()->json([
             'error' => false,
-            'message' => 'User approval revoked successfully',
+            'message' => 'User deactivated successfully',
             'data' => null,
         ]);
     }

@@ -19,7 +19,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_list_their_projects(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
 
         Project::factory()->count(3)->create(['user_id' => $user->id]);
 
@@ -45,7 +45,7 @@ class ProjectControllerTest extends TestCase
     public function test_user_can_store_project(): void
     {
         Queue::fake();
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
 
         $payload = [
             'name' => 'ERP Rollout',
@@ -82,7 +82,7 @@ class ProjectControllerTest extends TestCase
         Queue::fake();
         Storage::fake('public');
 
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
 
         $payload = [
             'name' => 'Brand New Initiative',
@@ -104,7 +104,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_view_single_project(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
         $project = Project::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->getJson("/api/projects/{$project->id}");
@@ -120,7 +120,7 @@ class ProjectControllerTest extends TestCase
     public function test_user_can_update_project(): void
     {
         Queue::fake();
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
         $project = Project::factory()->create(['user_id' => $user->id, 'name' => 'Old Name', 'launch_date' => now()->toDateTimeString()]);
 
         $payload = [
@@ -149,7 +149,7 @@ class ProjectControllerTest extends TestCase
         Queue::fake();
         Storage::fake('public');
 
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
 
         $project = Project::factory()->create(['user_id' => $user->id]);
 
@@ -180,7 +180,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_delete_project(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_approved' => true]);
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
         $project = Project::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->deleteJson("/api/projects/{$project->id}");
