@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SupabaseController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\PaymentMethodController;
@@ -36,5 +37,13 @@ Route::middleware(['auth:supabase', 'role:user', 'user.approved'])->group(functi
 
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {
         Route::get('', 'show');
+    });
+
+    Route::prefix('projects')->controller(ProjectController::class)->group(function () {
+        Route::get('', 'index');
+        Route::post('', 'store');
+        Route::get('{project}', 'show')->can('view', 'project');
+        Route::post('{project}', 'update')->can('update', 'project');
+        Route::delete('{project}', 'destroy')->can('delete', 'project');
     });
 });
