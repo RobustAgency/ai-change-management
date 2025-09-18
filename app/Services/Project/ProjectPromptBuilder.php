@@ -12,14 +12,14 @@ class ProjectPromptBuilder
 
         $stakeholders = $this->formatStakeholders($project->stakeholders);
         $replacements = [
-            ':title' => $project->name ?? '',
-            ':launch_date' => $project->launch_date?->toDateTimeString() ?? '',
-            ':type' => $project->type ?? '',
-            ':sponsor_name' => $project->sponsor_name ?? '',
-            ':sponsor_title' => $project->sponsor_title ?? '',
-            ':business_goals' => $project->business_goals ?? '',
-            ':summary' => $project->summary ?? '',
-            ':expected_outcomes' => $project->expected_outcomes ?? '',
+            ':title' => $project->name,
+            ':launch_date' => $project->launch_date?->toDateTimeString(),
+            ':type' => $project->type,
+            ':sponsor_name' => $project->sponsor_name,
+            ':sponsor_title' => $project->sponsor_title,
+            ':business_goals' => $project->business_goals,
+            ':summary' => $project->summary,
+            ':expected_outcomes' => $project->expected_outcomes,
             ':stakeholders' => $stakeholders,
             ':client_organization' => $project->client_organization,
         ];
