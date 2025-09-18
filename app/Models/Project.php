@@ -6,6 +6,7 @@ use App\Enums\ProjectStatus;
 use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -45,13 +46,23 @@ class Project extends Model implements HasMedia
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the AI content for this project
+     *
+     * @return HasOne<ProjectAiContent, $this>
+     */
+    public function aiContent(): HasOne
+    {
+        return $this->hasOne(ProjectAiContent::class);
+    }
+
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('client_logo')->singleFile();
+        $this->addMediaCollection('client_logos')->singleFile();
     }
 
     public function getClientLogoUrlAttribute(): ?string
     {
-        return $this->getFirstMediaUrl('client_logo') ?: null;
+        return $this->getFirstMediaUrl('client_logos') ?: null;
     }
 }

@@ -39,7 +39,7 @@ class ProfileControllerTest extends TestCase
         $user = User::factory()->create([
             'id' => 1,
             'role' => UserRole::USER,
-            'is_approved' => true,
+            'is_active' => true,
         ]);
 
         $response = $this->actingAs($user)->getJson('/api/profile');
@@ -49,17 +49,14 @@ class ProfileControllerTest extends TestCase
             'error',
             'message',
             'data' => [
-                'user' => [
-                    'id',
-                    'name',
-                    'email',
-                    'email_verified_at',
-                    'is_approved',
-                    'role',
-                    'created_at',
-                    'updated_at',
-                ],
-                'has_payment_method',
+                'id',
+                'name',
+                'email',
+                'email_verified_at',
+                'is_active',
+                'role',
+                'created_at',
+                'updated_at',
             ],
         ]);
 
@@ -67,27 +64,25 @@ class ProfileControllerTest extends TestCase
         $this->assertFalse($responseData['error']);
         $this->assertEquals('Profile retrieved successfully.', $responseData['message']);
         $this->assertArrayHasKey('data', $responseData);
-        $this->assertArrayHasKey('user', $responseData['data']);
-        $this->assertArrayHasKey('has_payment_method', $responseData['data']);
-        $this->assertEquals($user->id, $responseData['data']['user']['id']);
-        $this->assertEquals($user->email, $responseData['data']['user']['email']);
-        $this->assertEquals($user->name, $responseData['data']['user']['name']);
+        $this->assertEquals($user->id, $responseData['data']['id']);
+        $this->assertEquals($user->email, $responseData['data']['email']);
+        $this->assertEquals($user->name, $responseData['data']['name']);
     }
 
-    public function test_non_approved_user_cannot_access_profile(): void
+    public function test_non_active_user_cannot_access_profile(): void
     {
         Notification::fake();
 
         $user = User::factory()->create([
             'id' => 1,
             'role' => UserRole::USER,
-            'is_approved' => false,
+            'is_active' => false,
         ]);
 
         $response = $this->actingAs($user)->getJson('/api/profile');
         $response->assertStatus(403);
         $response->assertJson([
-            'message' => 'Your account is not approved yet. Please contact support.',
+            'message' => 'Your account is not active. Please contact support.',
         ]);
     }
 }

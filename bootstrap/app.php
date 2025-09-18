@@ -2,7 +2,7 @@
 
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\VerifyUserRole;
-use App\Http\Middleware\EnsureUserIsApproved;
+use App\Http\Middleware\EnsureUserIsActivate;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'stripe/*',
         ]);
         $middleware->alias([
-            'user.approved' => EnsureUserIsApproved::class,
+            'user.active' => EnsureUserIsActivate::class,
             'role' => VerifyUserRole::class,
         ]);
     })

@@ -6,9 +6,7 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use App\Events\UserCreated;
-use App\Events\UserApproved;
 use Laravel\Cashier\Billable;
-use App\Events\UserApprovalRevoked;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,7 +25,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'is_approved',
+        'is_active',
         'supabase_id',
         'role',
         'password',
@@ -57,7 +55,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'is_approved' => 'boolean',
+            'is_active' => 'boolean',
             'password' => 'hashed',
             'role' => UserRole::class,
         ];
@@ -82,8 +80,8 @@ class User extends Authenticatable
             'name' => $attributes['name'],
             'email' => $attributes['email'],
             'supabase_id' => $attributes['supabase_id'],
-            'is_approved' => $attributes['role'] === 'admin' ? true : false,
-            'role' => UserRole::tryFrom($roleValue) ?? UserRole::USER,
+            'is_active' => true,
+            'role' => UserRole::tryFrom(strtolower($attributes['role'] ?? '')) ?? UserRole::USER,
         ]);
 
         // Dispatch Registered event
@@ -93,28 +91,25 @@ class User extends Authenticatable
     }
 
     /**
-     * Approve the user account.
+     * Activate the user account.
      */
-    public function approve(): self
+    public function activate(): self
     {
-        $this->is_approved = true;
+        $this->is_active = true;
         $this->save();
-
-        event(new UserApproved($this));
 
         return $this;
     }
 
     /**
-     * Revoke approval for the user account.
+     * Deactivate the user account.
      *
      * @return $this
      */
-    public function revokeApproval(): self
+    public function deactivate(): self
     {
-        event(new UserApprovalRevoked($this));
-
-        $this->delete();
+        $this->is_active = false;
+        $this->save();
 
         return $this;
     }

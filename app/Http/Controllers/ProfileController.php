@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
@@ -12,17 +13,11 @@ class ProfileController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $hasPaymentMethod = $user->hasPaymentMethod();
-
-        $data = [
-            'user' => $user,
-            'has_payment_method' => $hasPaymentMethod,
-        ];
 
         return response()->json([
             'error' => false,
             'message' => 'Profile retrieved successfully.',
-            'data' => $data,
+            'data' => new UserResource($user),
         ]);
     }
 }
