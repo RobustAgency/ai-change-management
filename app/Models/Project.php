@@ -49,11 +49,11 @@ class Project extends Model implements HasMedia
     /**
      * Get the AI content for this project
      *
-     * @return HasOne<ProjectAiContent, $this>
+     * @return HasOne<ProjectContent, $this>
      */
     public function aiContent(): HasOne
     {
-        return $this->hasOne(ProjectAiContent::class);
+        return $this->hasOne(ProjectContent::class);
     }
 
     public function registerMediaCollections(): void

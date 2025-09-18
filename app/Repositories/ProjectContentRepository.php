@@ -3,22 +3,26 @@
 namespace App\Repositories;
 
 use App\Models\Project;
-use App\Models\ProjectAiContent;
+use App\Models\ProjectContent;
 
 class ProjectContentRepository
 {
-    public function upsertForProject(Project $project, array $data): ProjectAiContent
+    public function upsertForProject(Project $project, array $data): ProjectContent
     {
-        return ProjectAiContent::updateOrCreate(
+        return ProjectContent::updateOrCreate(
             ['project_id' => $project->id],
             [
-                'key_messages' => $data['key_messages'] ?? null,
-                'audience_variations' => $data['audience_variations'] ?? null,
+                'slides_content' => $data['slides_content'],
+                // 'faqs' => $data['faqs'],
+                // 'video_script' => $data['video_script'],
             ]
         );
     }
 
-    public function getForProject(Project $project): ?ProjectAiContent
+    /**
+     * Get ProjectContent for a given project.
+     */
+    public function getForProject(Project $project): ?ProjectContent
     {
         return $project->aiContent()->first();
     }

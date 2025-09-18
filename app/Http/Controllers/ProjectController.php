@@ -44,7 +44,6 @@ class ProjectController extends Controller
         if ($request->hasFile('client_logo')) {
             $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logos');
         }
-        GenerateProjectContentJob::dispatch($project);
 
         return response()->json([
             'error' => false,
@@ -54,11 +53,32 @@ class ProjectController extends Controller
     }
 
     /**
+     * Generate AI content for a specific project.
+     */
+    public function generateContent(Project $project): JsonResponse
+    {
+        if ($project->aiContent()->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'AI content has already been generated for this project.',
+                'data' => null,
+            ]);
+        }
+        GenerateProjectContentJob::dispatch($project);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Content generation started',
+            'data' => null,
+        ]);
+    }
+
+    /**
      * Show a specific project with its details.
      */
     public function show(Project $project): JsonResponse
     {
-        $project->load('media');
+        $project->load('media', 'aiContent');
 
         return response()->json([
             'error' => false,
@@ -76,7 +96,6 @@ class ProjectController extends Controller
         if ($request->hasFile('client_logo')) {
             $project->addMediaFromRequest('client_logo')->toMediaCollection('client_logos');
         }
-        GenerateProjectContentJob::dispatch($project);
 
         return response()->json([
             'error' => false,

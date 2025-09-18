@@ -20,6 +20,11 @@ class GenerateProjectContentJob implements ShouldQueue
      */
     public function __construct(private Project $project) {}
 
+    public function getProject(): Project
+    {
+        return $this->project;
+    }
+
     /**
      * Execute the job.
      */

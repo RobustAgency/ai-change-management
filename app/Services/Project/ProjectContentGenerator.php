@@ -30,12 +30,8 @@ class ProjectContentGenerator
             $parsed = $this->extractJson($content);
         }
 
-        $keyMessages = $parsed['key_messages'] ?? [];
-        $audienceVariations = $parsed['audience_variations'] ?? [];
-
         return [
-            'key_messages' => $keyMessages,
-            'audience_variations' => $audienceVariations,
+            'slides_content' => $parsed['slides_content'] ?? [],
         ];
     }
 

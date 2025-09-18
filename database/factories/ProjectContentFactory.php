@@ -6,9 +6,9 @@ use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ProjectAiContent>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ProjectContent>
  */
-class ProjectAiContentFactory extends Factory
+class ProjectContentFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,8 +19,9 @@ class ProjectAiContentFactory extends Factory
     {
         return [
             'project_id' => Project::factory(),
-            'key_messages' => json_encode($this->faker->sentences(3)),
-            'audience_variations' => json_encode($this->faker->words(5)),
+            'slides_content' => json_encode($this->faker->sentences(3)),
+            'faqs' => json_encode($this->faker->words(5)),
+            'video_script' => json_encode($this->faker->paragraphs(2)),
         ];
     }
 }

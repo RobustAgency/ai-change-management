@@ -36,9 +36,9 @@ return [
     ],
 
     'supabase' => [
-        'url' => env('SUPABASE_URL'),
-        'key' => env('SUPABASE_SERVICE_KEY'), // Service key has admin privileges
-        'jwt_secret' => env('SUPABASE_JWT_SECRET'),
+        'url' => env('SUPABASE_URL', null),
+        'key' => env('SUPABASE_SERVICE_KEY', null),
+        'jwt_secret' => env('SUPABASE_JWT_SECRET', null),
     ],
 
     'openai' => [

@@ -7,8 +7,10 @@ use App\Models\User;
 use App\Enums\UserRole;
 use App\Models\Project;
 use App\Enums\ProjectStatus;
+use App\Models\ProjectContent;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use App\Jobs\GenerateProjectContentJob;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -117,9 +119,53 @@ class ProjectControllerTest extends TestCase
         ]);
     }
 
-    public function test_user_can_update_project(): void
+    public function test_user_can_generate_content(): void
     {
         Queue::fake();
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $project = Project::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->getJson("/api/projects/generate-content/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'error' => false,
+            'message' => 'Content generation started',
+        ]);
+
+        Queue::assertPushed(GenerateProjectContentJob::class, function ($job) use ($project) {
+            return $job->getProject()->is($project);
+        });
+    }
+
+    public function test_user_cannot_generate_content_if_already_exists(): void
+    {
+        Queue::fake();
+
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $project = Project::factory()->create(['user_id' => $user->id]);
+
+        ProjectContent::factory()->create([
+            'project_id' => $project->id,
+            'slides_content' => [
+                'executive_summary' => 'Already generated summary',
+                'benefits' => ['Efficiency', 'Fewer errors'],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->getJson("/api/projects/generate-content/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'error' => true,
+            'message' => 'AI content has already been generated for this project.',
+        ]);
+
+        Queue::assertNotPushed(GenerateProjectContentJob::class);
+    }
+
+    public function test_user_can_update_project(): void
+    {
         $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
         $project = Project::factory()->create(['user_id' => $user->id, 'name' => 'Old Name', 'launch_date' => now()->toDateTimeString()]);
 
@@ -146,7 +192,6 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_replace_project_logo_on_update(): void
     {
-        Queue::fake();
         Storage::fake('public');
 
         $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
