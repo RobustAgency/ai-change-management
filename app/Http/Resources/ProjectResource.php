@@ -31,7 +31,6 @@ class ProjectResource extends JsonResource
             'stakeholders' => $this->stakeholders,
             'client_organization' => $this->client_organization,
             'status' => $this->status,
-            'client_logo_url' => $this->client_logo_url,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

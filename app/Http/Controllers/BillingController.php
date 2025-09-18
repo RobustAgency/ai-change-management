@@ -10,13 +10,11 @@ use Illuminate\Support\Facades\Auth;
 use App\Actions\Stripe\CancelSubscription;
 use App\Actions\Stripe\ResumeSubscription;
 use App\Actions\Stripe\UpgradeSubscription;
-use App\Actions\Stripe\CreateNewSubscription;
 use App\Actions\Stripe\DowngradeSubscription;
 
 class BillingController extends Controller
 {
     public function __construct(
-        private CreateNewSubscription $createNewSubscription,
         private DowngradeSubscription $downgradeSubscription,
         private ResumeSubscription $resumeSubscription,
         private UpgradeSubscription $upgradeSubscription
@@ -37,32 +35,20 @@ class BillingController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-
-        $user->createOrGetStripeCustomer();
-
-        if (! $user->hasPaymentMethod()) {
-            $billingUrl = $user->billingPortalUrl(url("/plans/subscribe/{$plan->id}"));
-
-            return response()->json([
-                'error' => true,
-                'message' => 'You must add a payment method to subscribe.',
-                'data' => ['redirect_url' => $billingUrl],
-            ]);
-        }
         $subscription = $user->subscription('default');
 
-        // New subscription creation
         if (! $subscription || $subscription->ended()) {
-            $subscriptionCreated = $this->createNewSubscription->execute($user, $plan);
-            if ($subscriptionCreated) {
-                $user->update(['plan_id' => $plan->id]);
-
-                return response()->json([
-                    'error' => false,
-                    'message' => 'Subscription created successfully.',
-                    'data' => null,
+            $checkoutDetails = $user->newSubscription('default', $plan->stripe_price_id)
+                ->checkout([
+                    'success_url' => config('cashier.success_url'),
+                    'cancel_url' => config('cashier.cancel_url'),
                 ]);
-            }
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Checkout session created successfully.',
+                'data' => ['checkout_url' => $checkoutDetails->asStripeCheckoutSession()->url],
+            ]);
         }
 
         // Existing subscription management
@@ -80,11 +66,23 @@ class BillingController extends Controller
             }
         }
 
+        return response()->json([
+            'error' => true,
+            'message' => 'You already have an active subscription.',
+            'data' => null,
+        ], 400);
+    }
+
+    public function switch(Plan $plan): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $subscription = $user->subscription('default');
+
         // Swap plan based on price difference
         if ($subscription->active() && ! $plan->isSameAsSubscription($subscription)) {
             $currentPlan = Plan::currentPlanFor($subscription);
-
-            if ($currentPlan && $plan->isUpgradeTo($plan)) {
+            if ($currentPlan && $currentPlan->isUpgradeTo($plan)) {
                 $planUpgraded = $this->upgradeSubscription->execute($user, $plan);
 
                 if ($planUpgraded) {
@@ -170,7 +168,7 @@ class BillingController extends Controller
 
     public function upcomingInvoice()
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
         $invoice = $user->upcomingInvoice();
 
