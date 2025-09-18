@@ -31,7 +31,7 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => UserRole::USER,
-            'is_approved' => true,
+            'is_active' => true,
             'supabase_id' => Str::uuid(),
             'created_at' => now(),
             'updated_at' => now(),

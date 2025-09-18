@@ -38,7 +38,7 @@ class BillingControllerTest extends TestCase
         $user = User::factory()->create([
             'id' => 1,
             'role' => UserRole::USER,
-            'is_approved' => true,
+            'is_active' => true,
         ]);
 
         Plan::factory()->create([
@@ -60,7 +60,7 @@ class BillingControllerTest extends TestCase
     {
         $user = User::factory()->create([
             'role' => UserRole::USER,
-            'is_approved' => true,
+            'is_active' => true,
         ]);
 
         // Fake Stripe invoice object
@@ -93,7 +93,7 @@ class BillingControllerTest extends TestCase
     {
         $user = User::factory()->create([
             'role' => UserRole::USER,
-            'is_approved' => true,
+            'is_active' => true,
         ]);
 
         // Fake Stripe upcoming invoice object
