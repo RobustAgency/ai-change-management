@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureUserIsApproved
+class EnsureUserIsActivate
 {
     /**
      * Handle an incoming request.
@@ -19,8 +19,8 @@ class EnsureUserIsApproved
         /** @var User $user */
         $user = $request->user();
 
-        if (! $user->is_approved) {
-            abort(403, 'Your account is not approved yet. Please contact support.');
+        if (! $user->is_active) {
+            abort(403, 'Your account is not active. Please contact support.');
         }
 
         return $next($request);

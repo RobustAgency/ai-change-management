@@ -135,4 +135,6 @@ return [
     ],
 
     'redirect_url' => env('FRONTEND_REDIRECT_URL', '/'),
+    'success_url' => env('STRIPE_SUCCESS_URL', '/'),
+    'cancel_url' => env('STRIPE_CANCEL_URL', '/'),
 ];

@@ -39,14 +39,7 @@ class UserControllerTest extends TestCase
         Notification::fake();
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
 
-        $users = User::factory()->count(5)->create(['role' => UserRole::USER]);
-
-        foreach ($users as $user) {
-            $user->created_at = now();
-            $user->updated_at = now();
-            $user->save();
-        }
-
+        User::factory()->count(5)->create(['role' => UserRole::USER]);
         $response = $this->actingAs($admin)->getJson('/api/admin/users');
 
         $response->assertOk();
@@ -72,7 +65,7 @@ class UserControllerTest extends TestCase
                 'id',
                 'name',
                 'email',
-                'is_approved',
+                'is_active',
                 'created_at',
                 'updated_at',
             ],
@@ -131,18 +124,18 @@ class UserControllerTest extends TestCase
         $this->assertEquals('john.doe@example.com', $responseData['data'][0]['email']);
     }
 
-    public function test_admin_can_approve_user(): void
+    public function test_admin_can_activate_user(): void
     {
         Notification::fake();
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
 
         $user = User::factory()->create([
             'role' => UserRole::USER,
-            'is_approved' => false,
+            'is_active' => false,
         ]);
-        $this->assertFalse($user->is_approved);
+        $this->assertFalse($user->is_active);
 
-        $response = $this->actingAs($admin)->postJson("/api/admin/users/{$user->id}/approve");
+        $response = $this->actingAs($admin)->postJson("/api/admin/users/{$user->id}/activate");
 
         $response->assertOk();
         $response->assertJsonStructure([
@@ -152,7 +145,7 @@ class UserControllerTest extends TestCase
                 'id',
                 'name',
                 'email',
-                'is_approved',
+                'is_active',
                 'created_at',
                 'updated_at',
             ],
@@ -160,25 +153,25 @@ class UserControllerTest extends TestCase
 
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
-        $this->assertEquals('User approved successfully', $responseData['message']);
-        $this->assertTrue($responseData['data']['is_approved']);
+        $this->assertEquals('User activated successfully', $responseData['message']);
+        $this->assertTrue($responseData['data']['is_active']);
 
         $user->refresh();
-        $this->assertTrue($user->is_approved);
+        $this->assertTrue($user->is_active);
     }
 
-    public function test_admin_can_revoke_user_approval(): void
+    public function test_admin_can_deactivate_user(): void
     {
         Notification::fake();
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
 
         $user = User::factory()->create([
             'role' => UserRole::USER,
-            'is_approved' => true,
+            'is_active' => true,
         ]);
-        $this->assertTrue($user->is_approved);
+        $this->assertTrue($user->is_active);
 
-        $response = $this->actingAs($admin)->postJson("/api/admin/users/{$user->id}/revoke-approval");
+        $response = $this->actingAs($admin)->postJson("/api/admin/users/{$user->id}/deactivate");
 
         $response->assertOk();
         $response->assertJsonStructure([
@@ -189,7 +182,7 @@ class UserControllerTest extends TestCase
 
         $responseData = $response->json();
         $this->assertFalse($responseData['error']);
-        $this->assertEquals('User approval revoked successfully', $responseData['message']);
-        $this->assertDatabaseMissing('users', ['id' => $user->id, 'is_approved' => true]);
+        $this->assertEquals('User deactivated successfully', $responseData['message']);
+        $this->assertDatabaseMissing('users', ['id' => $user->id, 'is_active' => true]);
     }
 }
