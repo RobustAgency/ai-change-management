@@ -12,11 +12,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('project_ai_contents', function (Blueprint $table) {
+        Schema::create('project_contents', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Project::class)->constrained()->cascadeOnDelete();
-            $table->json('key_messages')->nullable();
-            $table->json('audience_variations')->nullable();
+            $table->json('slides_content')->nullable();
+            $table->json('faqs')->nullable();           // FR-19 (future)
+            $table->longText('video_script')->nullable(); // FR-20 (future)
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('project_ai_contents');
+        Schema::dropIfExists('project_contents');
     }
 };

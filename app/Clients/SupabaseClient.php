@@ -46,9 +46,9 @@ class SupabaseClient
      */
     public function __construct()
     {
-        $this->apiUrl = rtrim(config('services.supabase.url'), '/');
-        $this->serviceKey = config('services.supabase.key');
-        $this->jwtSecret = config('services.supabase.jwt_secret');
+        $this->apiUrl = rtrim(config('services.supabase.url') ?? '', '/');
+        $this->serviceKey = config('services.supabase.key') ?? '';
+        $this->jwtSecret = config('services.supabase.jwt_secret') ?? '';
     }
 
     /**

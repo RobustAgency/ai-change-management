@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\User;
 
+use App\Models\Project;
 use App\Enums\ProjectStatus;
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,6 +14,13 @@ class UpdateProjectRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        /** @var Project $project */
+        $project = $this->route('project');
+
+        if ($project->aiContent()->exists()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -40,5 +48,13 @@ class UpdateProjectRequest extends FormRequest
             'client_logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
             'status' => ['nullable', Rule::in(array_map(fn ($c) => $c->value, ProjectStatus::cases()))],
         ];
+    }
+
+    /**
+     * Handle failed authorization.
+     */
+    protected function failedAuthorization()
+    {
+        abort(403, 'Projects with AI-generated content cannot be updated.');
     }
 }

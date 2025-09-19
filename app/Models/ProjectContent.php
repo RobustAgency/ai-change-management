@@ -6,20 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class ProjectAiContent extends Model
+class ProjectContent extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProjectAiContentFactory> */
+    /** @use HasFactory<\Database\Factories\ProjectContentFactory> */
     use HasFactory;
 
     protected $fillable = [
         'project_id',
-        'key_messages',
-        'audience_variations',
+        'slides_content',
+        'faqs',
+        'video_script',
     ];
 
     protected $casts = [
-        'key_messages' => 'array',
-        'audience_variations' => 'array',
+        'slides_content' => 'array',
+        'faqs' => 'array',
     ];
 
     /**
