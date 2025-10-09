@@ -50,6 +50,7 @@ class ProjectControllerTest extends TestCase
         $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
 
         $payload = [
+            'template_id' => 1,
             'name' => 'ERP Rollout',
             'launch_date' => now()->addMonth()->toDateTimeString(),
             'type' => 'new system',
@@ -87,6 +88,7 @@ class ProjectControllerTest extends TestCase
         $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
 
         $payload = [
+            'template_id' => 2,
             'name' => 'Brand New Initiative',
             'launch_date' => now()->toDateTimeString(),
             'client_logo' => UploadedFile::fake()->image('logo.png'),

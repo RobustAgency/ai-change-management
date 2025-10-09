@@ -24,6 +24,7 @@ class StoreProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'template_id' => ['required', 'integer', Rule::in([1, 2, 3])],
             'name' => ['required', 'string', 'max:255'],
             'launch_date' => ['required', 'date'],
             'type' => ['nullable', 'string', 'max:100'],
@@ -33,7 +34,6 @@ class StoreProjectRequest extends FormRequest
             'summary' => ['nullable', 'string'],
             'expected_outcomes' => ['nullable', 'string'],
             'stakeholders' => ['nullable', 'array'],
-            'stakeholders.*.name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'stakeholders.*.department' => ['sometimes', 'nullable', 'string', 'max:255'],
             'stakeholders.*.role_level' => ['sometimes', 'nullable', 'string', 'max:255'],
             'client_organization' => ['nullable', 'string'],

@@ -20,6 +20,7 @@ class ProjectFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
+            'template_id' => $this->faker->randomElement([1, 2, 3]),
             'name' => $this->faker->sentence(3),
             'launch_date' => $this->faker->dateTimeBetween('now', '+1 year'),
             'type' => $this->faker->randomElement([
