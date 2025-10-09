@@ -2,54 +2,29 @@
 
 namespace App\Services\Project;
 
-use App\Clients\OpenAi;
 use App\Models\Project;
+use Illuminate\Pipeline\Pipeline;
+use App\Services\Project\Pipelines\GenerateEmailContent;
+use App\Services\Project\Pipelines\GenerateSlidesContent;
 
 class ProjectContentGenerator
 {
     public function __construct(
-        private OpenAi $openAi,
-        private ProjectPromptBuilder $promptBuilder
+        private Pipeline $pipeline
     ) {}
 
-    /**
-     * Generate structured content for a Project using the LLM.
-     */
     public function generateContent(Project $project): array
     {
-        $prompt = $this->promptBuilder->build($project);
+        $project->generated_content = [];
 
-        $messages = [
-            ['role' => 'system', 'content' => $prompt],
-        ];
+        $project = $this->pipeline
+            ->send($project)
+            ->through([
+                GenerateSlidesContent::class,
+                GenerateEmailContent::class,
+            ])
+            ->thenReturn();
 
-        $content = $this->openAi->chat($messages);
-        $parsed = json_decode($content, true);
-
-        if (! is_array($parsed)) {
-            $parsed = $this->extractJson($content);
-        }
-
-        return [
-            'slides_content' => $parsed['slides_content'] ?? [],
-        ];
-    }
-
-    /**
-     * Try to extract JSON block from a text.
-     */
-    private function extractJson(?string $text): array
-    {
-        if (empty($text)) {
-            return [];
-        }
-
-        if (preg_match('/\{(?:[^{}]|(?R))*\}/s', $text, $matches)) {
-            $json = $matches[0];
-
-            return json_decode($json, true) ?: [];
-        }
-
-        return [];
+        return $project->generated_content;
     }
 }

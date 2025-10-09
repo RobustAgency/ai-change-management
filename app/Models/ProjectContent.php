@@ -14,6 +14,7 @@ class ProjectContent extends Model
     protected $fillable = [
         'project_id',
         'slides_content',
+        'emails',
         'faqs',
         'video_script',
     ];

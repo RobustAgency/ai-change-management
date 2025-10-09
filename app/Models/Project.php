@@ -17,6 +17,7 @@ class Project extends Model implements HasMedia
 
     protected $fillable = [
         'user_id',
+        'template_id',
         'name',
         'launch_date',
         'type',
@@ -35,6 +36,14 @@ class Project extends Model implements HasMedia
         'launch_date' => 'datetime',
         'status' => ProjectStatus::class,
     ];
+
+    /**
+     * Temporary container for AI-generated data before persistence.
+     *
+     * This allows pipelines to store generated content (e.g., slides, emails, FAQs)
+     * on the Project instance before saving it to the database.
+     */
+    public ?array $generated_content = null;
 
     /**
      * Get the user that owns the project

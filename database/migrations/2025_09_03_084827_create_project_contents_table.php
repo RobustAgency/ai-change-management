@@ -16,8 +16,9 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Project::class)->constrained()->cascadeOnDelete();
             $table->json('slides_content')->nullable();
-            $table->json('faqs')->nullable();           // FR-19 (future)
-            $table->longText('video_script')->nullable(); // FR-20 (future)
+            $table->json('emails')->nullable();
+            $table->json('faqs')->nullable();
+            $table->longText('video_script')->nullable();
             $table->timestamps();
         });
     }

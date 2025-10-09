@@ -20,11 +20,6 @@ class GenerateProjectContentJob implements ShouldQueue
      */
     public function __construct(private Project $project) {}
 
-    public function getProject(): Project
-    {
-        return $this->project;
-    }
-
     /**
      * Execute the job.
      */
@@ -34,5 +29,13 @@ class GenerateProjectContentJob implements ShouldQueue
         $data = $contentGenerator->generateContent($this->project);
 
         $repository->upsertForProject($this->project, $data);
+    }
+
+    /**
+     * Get the project for this job.
+     */
+    public function getProject(): Project
+    {
+        return $this->project;
     }
 }
