@@ -14,7 +14,7 @@ class ProjectRepositoryTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    public function test_it_can_filter_projects_by_term(): void
+    public function test_filter_projects_by_term(): void
     {
         $user = User::factory()->create();
         Project::factory()->create([
@@ -34,7 +34,7 @@ class ProjectRepositoryTest extends TestCase
         $this->assertEquals('New HR Policy', $results->first()->name);
     }
 
-    public function test_it_can_filter_projects_by_status(): void
+    public function test_filter_projects_by_status(): void
     {
         $user = User::factory()->create();
         Project::factory()->create([
@@ -56,7 +56,7 @@ class ProjectRepositoryTest extends TestCase
         $this->assertEquals(ProjectStatus::Draft, $results->first()->status);
     }
 
-    public function test_it_can_filter_projects_by_launch_date(): void
+    public function test_filter_projects_by_launch_date(): void
     {
         $user = User::factory()->create();
         $today = now()->toDateString();

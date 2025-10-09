@@ -41,7 +41,6 @@ class UpdateProjectRequest extends FormRequest
             'summary' => ['nullable', 'string'],
             'expected_outcomes' => ['nullable', 'string'],
             'stakeholders' => ['nullable', 'array'],
-            'stakeholders.*.name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'stakeholders.*.department' => ['sometimes', 'nullable', 'string', 'max:255'],
             'stakeholders.*.role_level' => ['sometimes', 'nullable', 'string', 'max:255'],
             'client_organization' => ['nullable', 'string'],
