@@ -6,14 +6,21 @@ use Tests\TestCase;
 use App\Models\Project;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\View;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Services\Project\Pipelines\GenerateSlidesContent;
 
 class GenerateSlidesContentTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_generates_slides_content_successfully(): void
     {
-        $project = new Project(['template_id' => 1, 'name' => 'Test Project']);
-        $project->generated_content = [];
+        $user = \App\Models\User::factory()->create(['role' => \App\Enums\UserRole::USER]);
+        $project = \App\Models\Project::factory()->create([
+            'user_id' => $user->id,
+            'template_id' => 1,
+            'name' => 'Test Project',
+        ]);
 
         $mockResponse = json_encode([
             'slides_content' => [
@@ -53,22 +60,31 @@ class GenerateSlidesContentTest extends TestCase
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
-        $this->assertArrayHasKey('slides_content', $project->generated_content);
-        $this->assertArrayHasKey('executive_summary_slide', $project->generated_content['slides_content']);
-        $this->assertEquals('Test project overview', $project->generated_content['slides_content']['executive_summary_slide']['project_overview']);
+
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
+
+        $this->assertNotNull($aiContent);
+        $this->assertArrayHasKey('executive_summary_slide', $aiContent->slides_content);
+        $this->assertEquals('Test project overview', $aiContent->slides_content['executive_summary_slide']['project_overview']);
     }
 
     public function test_uses_correct_template_based_on_template_id(): void
     {
-        $project = new Project(['template_id' => 3, 'name' => 'Test Project']);
-        $project->generated_content = [];
+        $user = \App\Models\User::factory()->create(['role' => \App\Enums\UserRole::USER]);
+        $project = \App\Models\Project::factory()->create([
+            'user_id' => $user->id,
+            'template_id' => 3,
+            'name' => 'Test Project',
+        ]);
 
         Http::fake([
             'https://api.openai.com/v1/chat/completions' => Http::response([
                 'choices' => [
                     [
                         'message' => [
-                            'content' => '{}',
+                            'content' => json_encode(['slides_content' => ['test' => 'content']]),
                         ],
                     ],
                 ],

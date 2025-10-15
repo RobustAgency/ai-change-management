@@ -33,13 +33,16 @@ class ProjectContentGeneratorTest extends TestCase
         $this->mockViews();
 
         $generator = app(ProjectContentGenerator::class);
-        $result = $generator->generateContent($project);
+        $generator->generateContent($project);
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('slides_content', $result);
-        $this->assertArrayHasKey('emails', $result);
-        $this->assertNotEmpty($result['slides_content']);
-        $this->assertNotEmpty($result['emails']);
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
+
+        $this->assertNotNull($aiContent);
+        $this->assertNotEmpty($aiContent->slides_content);
+        $this->assertNotEmpty($aiContent->emails);
+        $this->assertNotEmpty($aiContent->faqs);
     }
 
     public function test_generate_content_with_different_template_ids(): void
@@ -57,11 +60,15 @@ class ProjectContentGeneratorTest extends TestCase
             $this->mockViewsForTemplate($templateId);
 
             $generator = app(ProjectContentGenerator::class);
-            $result = $generator->generateContent($project);
+            $generator->generateContent($project);
 
-            $this->assertIsArray($result);
-            $this->assertArrayHasKey('slides_content', $result);
-            $this->assertArrayHasKey('emails', $result);
+            // Refresh the project to get the updated aiContent
+            $project->refresh();
+            $aiContent = $project->aiContent;
+
+            $this->assertNotNull($aiContent);
+            $this->assertNotEmpty($aiContent->slides_content);
+            $this->assertNotEmpty($aiContent->emails);
         }
     }
 
@@ -73,7 +80,7 @@ class ProjectContentGeneratorTest extends TestCase
             'template_id' => 1,
         ]);
 
-        $this->assertNull($project->generated_content);
+        $this->assertNull($project->aiContent);
 
         $this->mockOpenAi();
         $this->mockViews();
@@ -81,9 +88,13 @@ class ProjectContentGeneratorTest extends TestCase
         $generator = app(ProjectContentGenerator::class);
         $generator->generateContent($project);
 
-        $this->assertIsArray($project->generated_content);
-        $this->assertArrayHasKey('slides_content', $project->generated_content);
-        $this->assertArrayHasKey('emails', $project->generated_content);
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
+
+        $this->assertNotNull($aiContent);
+        $this->assertNotEmpty($aiContent->slides_content);
+        $this->assertNotEmpty($aiContent->emails);
     }
 
     public function test_generate_content_handles_complex_project_data(): void
@@ -106,16 +117,20 @@ class ProjectContentGeneratorTest extends TestCase
         $this->mockViews();
 
         $generator = app(ProjectContentGenerator::class);
-        $result = $generator->generateContent($project);
+        $generator->generateContent($project);
 
-        $this->assertIsArray($result);
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
 
-        $this->assertArrayHasKey('executive_summary_slide', $result['slides_content']);
-        $this->assertArrayHasKey('benefits_slide', $result['slides_content']);
+        $this->assertNotNull($aiContent);
 
-        $this->assertArrayHasKey('Sales', $result['emails']);
-        $this->assertArrayHasKey('IT', $result['emails']);
-        $this->assertArrayHasKey('HR', $result['emails']);
+        $this->assertArrayHasKey('executive_summary_slide', $aiContent->slides_content);
+        $this->assertArrayHasKey('benefits_slide', $aiContent->slides_content);
+
+        $this->assertArrayHasKey('Sales', $aiContent->emails);
+        $this->assertArrayHasKey('IT', $aiContent->emails);
+        $this->assertArrayHasKey('HR', $aiContent->emails);
     }
 
     public function test_generate_content_returns_consistent_structure(): void
@@ -130,18 +145,21 @@ class ProjectContentGeneratorTest extends TestCase
         $this->mockViews();
 
         $generator = app(ProjectContentGenerator::class);
-        $result = $generator->generateContent($project);
+        $generator->generateContent($project);
 
-        $this->assertIsArray($result);
-        $this->assertCount(2, $result);
-        $this->assertArrayHasKey('slides_content', $result);
-        $this->assertArrayHasKey('emails', $result);
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
 
-        $slidesContent = $result['slides_content'];
+        $this->assertNotNull($aiContent);
+        $this->assertNotEmpty($aiContent->slides_content);
+        $this->assertNotEmpty($aiContent->emails);
+
+        $slidesContent = $aiContent->slides_content;
         $this->assertArrayHasKey('executive_summary_slide', $slidesContent);
         $this->assertArrayHasKey('benefits_slide', $slidesContent);
 
-        $emails = $result['emails'];
+        $emails = $aiContent->emails;
         $this->assertIsArray($emails);
         foreach ($emails as $department => $emailData) {
             $this->assertArrayHasKey('subject', $emailData);
@@ -199,14 +217,27 @@ class ProjectContentGeneratorTest extends TestCase
             ],
         ];
 
-        // Mock HTTP responses for both slides and email generation
+        $mockFaqsResponse = [
+            'faqs' => [
+                [
+                    'question' => 'What is this project about?',
+                    'answer' => 'This project aims to improve our processes...',
+                ],
+                [
+                    'question' => 'When will it be launched?',
+                    'answer' => 'The project is scheduled to launch next quarter...',
+                ],
+            ],
+        ];
+
+        // Mock HTTP responses for slides, email and faqs generation
         Http::fake([
-            'https://api.openai.com/v1/chat/completions' => function ($request) use ($mockSlidesResponse, $mockEmailResponse) {
+            'https://api.openai.com/v1/chat/completions' => function ($request) use ($mockSlidesResponse, $mockEmailResponse, $mockFaqsResponse) {
                 static $callCount = 0;
                 $callCount++;
 
-                // First call returns slides, second call returns emails
-                if ($callCount % 2 === 1) {
+                // First call returns slides, second call returns emails, third call returns faqs
+                if ($callCount % 3 === 1) {
                     return Http::response([
                         'choices' => [
                             [
@@ -216,9 +247,7 @@ class ProjectContentGeneratorTest extends TestCase
                             ],
                         ],
                     ], 200);
-                } else {
-                    $callCount = 0; // Reset for next test
-
+                } elseif ($callCount % 3 === 2) {
                     return Http::response([
                         'choices' => [
                             [
@@ -228,11 +257,24 @@ class ProjectContentGeneratorTest extends TestCase
                             ],
                         ],
                     ], 200);
+                } else {
+                    if ($callCount % 3 === 0) {
+                        $callCount = 0; // Reset for next test
+                    }
+
+                    return Http::response([
+                        'choices' => [
+                            [
+                                'message' => [
+                                    'content' => json_encode($mockFaqsResponse),
+                                ],
+                            ],
+                        ],
+                    ], 200);
                 }
             },
         ]);
 
-        // Create generator AFTER setting up the HTTP fake
         $this->generator = app(ProjectContentGenerator::class);
     }
 
@@ -244,6 +286,10 @@ class ProjectContentGeneratorTest extends TestCase
 
         View::shouldReceive('make')
             ->with('prompts.emails', \Mockery::type('array'))
+            ->andReturnSelf();
+
+        View::shouldReceive('make')
+            ->with('prompts.faqs', \Mockery::type('array'))
             ->andReturnSelf();
 
         View::shouldReceive('render')
@@ -258,6 +304,10 @@ class ProjectContentGeneratorTest extends TestCase
 
         View::shouldReceive('make')
             ->with('prompts.emails', \Mockery::type('array'))
+            ->andReturnSelf();
+
+        View::shouldReceive('make')
+            ->with('prompts.faqs', \Mockery::type('array'))
             ->andReturnSelf();
 
         View::shouldReceive('render')

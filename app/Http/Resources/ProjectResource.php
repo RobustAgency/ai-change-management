@@ -20,6 +20,7 @@ class ProjectResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'template_id' => $this->template_id,
             'name' => $this->name,
             'launch_date' => $this->launch_date?->toIso8601String(),
             'type' => $this->type,

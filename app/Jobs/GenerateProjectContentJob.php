@@ -26,9 +26,7 @@ class GenerateProjectContentJob implements ShouldQueue
     public function handle(ProjectContentGenerator $contentGenerator, ProjectContentRepository $repository): void
     {
         \info('GenerateProjectContentJob dispatched: '.$this->project->id);
-        $data = $contentGenerator->generateContent($this->project);
-
-        $repository->upsertForProject($this->project, $data);
+        $contentGenerator->generateContent($this->project);
     }
 
     /**

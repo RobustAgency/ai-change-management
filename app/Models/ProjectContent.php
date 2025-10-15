@@ -21,6 +21,7 @@ class ProjectContent extends Model
 
     protected $casts = [
         'slides_content' => 'array',
+        'emails' => 'array',
         'faqs' => 'array',
     ];
 

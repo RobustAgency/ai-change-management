@@ -57,13 +57,6 @@ class ProjectController extends Controller
      */
     public function generateContent(Project $project): JsonResponse
     {
-        if ($project->aiContent()->exists()) {
-            return response()->json([
-                'error' => true,
-                'message' => 'AI content has already been generated for this project.',
-                'data' => null,
-            ]);
-        }
         GenerateProjectContentJob::dispatch($project);
 
         return response()->json([

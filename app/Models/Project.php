@@ -38,14 +38,6 @@ class Project extends Model implements HasMedia
     ];
 
     /**
-     * Temporary container for AI-generated data before persistence.
-     *
-     * This allows pipelines to store generated content (e.g., slides, emails, FAQs)
-     * on the Project instance before saving it to the database.
-     */
-    public ?array $generated_content = null;
-
-    /**
      * Get the user that owns the project
      *
      * @return BelongsTo<User, $this>

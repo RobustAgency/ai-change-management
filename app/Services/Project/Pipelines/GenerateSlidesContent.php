@@ -3,6 +3,7 @@
 namespace App\Services\Project\Pipelines;
 
 use Closure;
+use Exception;
 use App\Clients\OpenAi;
 use App\Models\Project;
 use Illuminate\Support\Facades\View;
@@ -21,7 +22,14 @@ class GenerateSlidesContent
 
         $data = json_decode($response, true) ?: $this->extractJson($response);
 
-        $project->generated_content['slides_content'] = $data['slides_content'] ?? [];
+        if (empty($data['slides_content'])) {
+            throw new Exception('Failed to generate slides content.');
+        }
+        $project->aiContent()->updateOrCreate([
+            'project_id' => $project->id,
+        ], [
+            'slides_content' => $data['slides_content'],
+        ]);
 
         return $next($project);
     }

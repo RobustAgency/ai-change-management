@@ -28,7 +28,14 @@ class GenerateEmailContentTest extends TestCase
                 ['department' => 'HR', 'role_level' => 'Director'],
             ],
         ]);
-        $project->generated_content = [];
+
+        // Create the aiContent record first since EmailContent pipeline uses update() not updateOrCreate()
+        $project->aiContent()->create([
+            'project_id' => $project->id,
+            'slides_content' => [],
+            'emails' => [],
+            'faqs' => [],
+        ]);
 
         $this->mockOpenAi();
         $this->mockViews();
@@ -41,11 +48,16 @@ class GenerateEmailContentTest extends TestCase
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
-        $this->assertArrayHasKey('emails', $project->generated_content);
-        $this->assertArrayHasKey('Sales', $project->generated_content['emails']);
-        $this->assertArrayHasKey('HR', $project->generated_content['emails']);
-        $this->assertEquals('Exciting Changes Ahead for Sales', $project->generated_content['emails']['Sales']['subject']);
-        $this->assertStringContainsString('Dear Sales Team', $project->generated_content['emails']['Sales']['body']);
+
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
+
+        $this->assertNotNull($aiContent);
+        $this->assertArrayHasKey('Sales', $aiContent->emails);
+        $this->assertArrayHasKey('HR', $aiContent->emails);
+        $this->assertEquals('Exciting Changes Ahead for Sales', $aiContent->emails['Sales']['subject']);
+        $this->assertStringContainsString('Dear Sales Team', $aiContent->emails['Sales']['body']);
     }
 
     public function test_handle_with_complex_stakeholder_structure(): void
@@ -65,7 +77,14 @@ class GenerateEmailContentTest extends TestCase
             'sponsor_name' => 'John Doe',
             'sponsor_title' => 'CEO',
         ]);
-        $project->generated_content = [];
+
+        // Create the aiContent record first since EmailContent pipeline uses update() not updateOrCreate()
+        $project->aiContent()->create([
+            'project_id' => $project->id,
+            'slides_content' => [],
+            'emails' => [],
+            'faqs' => [],
+        ]);
 
         $this->mockOpenAiWithMultipleDepartments();
         $this->mockViews();
@@ -78,9 +97,13 @@ class GenerateEmailContentTest extends TestCase
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
-        $this->assertArrayHasKey('emails', $project->generated_content);
 
-        $emails = $project->generated_content['emails'];
+        // Refresh the project to get the updated aiContent
+        $project->refresh();
+        $aiContent = $project->aiContent;
+
+        $this->assertNotNull($aiContent);
+        $emails = $aiContent->emails;
         $this->assertArrayHasKey('IT', $emails);
         $this->assertArrayHasKey('Finance', $emails);
         $this->assertArrayHasKey('Operations', $emails);
@@ -94,16 +117,19 @@ class GenerateEmailContentTest extends TestCase
         }
     }
 
-    public function test_build_prompt_creates_correct_view(): void
+    public function test_handles_view_rendering_correctly(): void
     {
         $user = User::factory()->create(['role' => UserRole::USER]);
         $project = Project::factory()->create([
             'user_id' => $user->id,
             'name' => 'Strategic Initiative',
             'template_id' => 2,
+            'stakeholders' => [
+                ['department' => 'Sales', 'role_level' => 'Manager'],
+            ],
         ]);
 
-        $pipeline = app(GenerateEmailContent::class);
+        $this->mockOpenAi();
 
         View::shouldReceive('make')
             ->once()
@@ -114,13 +140,14 @@ class GenerateEmailContentTest extends TestCase
             ->once()
             ->andReturn('enhanced prompt content for strategic initiative');
 
-        $reflection = new \ReflectionClass($pipeline);
-        $method = $reflection->getMethod('buildPrompt');
-        $method->setAccessible(true);
+        $nextCallback = function ($proj) {
+            return $proj;
+        };
 
-        $result = $method->invoke($pipeline, $project);
+        $pipeline = app(GenerateEmailContent::class);
+        $result = $pipeline->handle($project, $nextCallback);
 
-        $this->assertEquals('enhanced prompt content for strategic initiative', $result);
+        $this->assertSame($project, $result);
     }
 
     public function test_parse_emails_handles_json_with_code_blocks(): void
