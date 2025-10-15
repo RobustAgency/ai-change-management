@@ -43,6 +43,7 @@ class ProjectContentGeneratorTest extends TestCase
         $this->assertNotEmpty($aiContent->slides_content);
         $this->assertNotEmpty($aiContent->emails);
         $this->assertNotEmpty($aiContent->faqs);
+        $this->assertNotEmpty($aiContent->video_script);
     }
 
     public function test_generate_content_with_different_template_ids(): void
@@ -69,6 +70,8 @@ class ProjectContentGeneratorTest extends TestCase
             $this->assertNotNull($aiContent);
             $this->assertNotEmpty($aiContent->slides_content);
             $this->assertNotEmpty($aiContent->emails);
+            $this->assertNotEmpty($aiContent->faqs);
+            $this->assertNotEmpty($aiContent->video_script);
         }
     }
 
@@ -95,6 +98,8 @@ class ProjectContentGeneratorTest extends TestCase
         $this->assertNotNull($aiContent);
         $this->assertNotEmpty($aiContent->slides_content);
         $this->assertNotEmpty($aiContent->emails);
+        $this->assertNotEmpty($aiContent->faqs);
+        $this->assertNotEmpty($aiContent->video_script);
     }
 
     public function test_generate_content_handles_complex_project_data(): void
@@ -230,14 +235,33 @@ class ProjectContentGeneratorTest extends TestCase
             ],
         ];
 
-        // Mock HTTP responses for slides, email and faqs generation
+        $mockVideoScriptResponse = [
+            'video_script' => [
+                [
+                    'scene' => 1,
+                    'type' => 'introduction',
+                    'narration' => 'Welcome to our exciting new project...',
+                    'visuals' => 'Company logo and project title',
+                    'duration' => 10,
+                ],
+                [
+                    'scene' => 2,
+                    'type' => 'overview',
+                    'narration' => 'This project will transform how we work...',
+                    'visuals' => 'Process diagrams and flowcharts',
+                    'duration' => 15,
+                ],
+            ],
+        ];
+
+        // Mock HTTP responses for slides, email, faqs and video script generation
         Http::fake([
-            'https://api.openai.com/v1/chat/completions' => function ($request) use ($mockSlidesResponse, $mockEmailResponse, $mockFaqsResponse) {
+            'https://api.openai.com/v1/chat/completions' => function ($request) use ($mockSlidesResponse, $mockEmailResponse, $mockFaqsResponse, $mockVideoScriptResponse) {
                 static $callCount = 0;
                 $callCount++;
 
-                // First call returns slides, second call returns emails, third call returns faqs
-                if ($callCount % 3 === 1) {
+                // First call returns slides, second call returns emails, third call returns faqs, fourth call returns video script
+                if ($callCount % 4 === 1) {
                     return Http::response([
                         'choices' => [
                             [
@@ -247,7 +271,7 @@ class ProjectContentGeneratorTest extends TestCase
                             ],
                         ],
                     ], 200);
-                } elseif ($callCount % 3 === 2) {
+                } elseif ($callCount % 4 === 2) {
                     return Http::response([
                         'choices' => [
                             [
@@ -257,8 +281,18 @@ class ProjectContentGeneratorTest extends TestCase
                             ],
                         ],
                     ], 200);
+                } elseif ($callCount % 4 === 3) {
+                    return Http::response([
+                        'choices' => [
+                            [
+                                'message' => [
+                                    'content' => json_encode($mockFaqsResponse),
+                                ],
+                            ],
+                        ],
+                    ], 200);
                 } else {
-                    if ($callCount % 3 === 0) {
+                    if ($callCount % 4 === 0) {
                         $callCount = 0; // Reset for next test
                     }
 
@@ -266,7 +300,7 @@ class ProjectContentGeneratorTest extends TestCase
                         'choices' => [
                             [
                                 'message' => [
-                                    'content' => json_encode($mockFaqsResponse),
+                                    'content' => json_encode($mockVideoScriptResponse),
                                 ],
                             ],
                         ],
@@ -292,6 +326,10 @@ class ProjectContentGeneratorTest extends TestCase
             ->with('prompts.faqs', \Mockery::type('array'))
             ->andReturnSelf();
 
+        View::shouldReceive('make')
+            ->with('prompts.video_script', \Mockery::type('array'))
+            ->andReturnSelf();
+
         View::shouldReceive('render')
             ->andReturn('Mocked prompt content');
     }
@@ -308,6 +346,10 @@ class ProjectContentGeneratorTest extends TestCase
 
         View::shouldReceive('make')
             ->with('prompts.faqs', \Mockery::type('array'))
+            ->andReturnSelf();
+
+        View::shouldReceive('make')
+            ->with('prompts.video_script', \Mockery::type('array'))
             ->andReturnSelf();
 
         View::shouldReceive('render')

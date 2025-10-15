@@ -32,9 +32,6 @@ Each FAQ should:
 ---
 
 ### 🧾 Output Format:
-Return **only valid JSON** in this structure:
-
-### 🧾 Output Format:
 Return **ONLY** a **valid JSON object**. Use \\n for line breaks and escape quotes properly.
 
 ```json

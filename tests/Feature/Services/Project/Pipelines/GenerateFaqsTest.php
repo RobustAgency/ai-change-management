@@ -9,10 +9,10 @@ use App\Models\Project;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\View;
 use Illuminate\Foundation\Testing\WithFaker;
+use App\Services\Project\Pipelines\GenerateFaqs;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\Project\Pipelines\GenerateFaqsContent;
 
-class GenerateFaqsContentTest extends TestCase
+class GenerateFaqsTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
@@ -27,7 +27,6 @@ class GenerateFaqsContentTest extends TestCase
             'business_goals' => 'Improve customer relationships',
         ]);
 
-        // Create the aiContent record first since FaqsContent pipeline uses update() not updateOrCreate()
         $project->aiContent()->create([
             'project_id' => $project->id,
             'slides_content' => [],
@@ -42,12 +41,11 @@ class GenerateFaqsContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateFaqsContent::class);
+        $pipeline = app(GenerateFaqs::class);
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -78,7 +76,6 @@ class GenerateFaqsContentTest extends TestCase
             'expected_outcomes' => 'Improved efficiency and scalability',
         ]);
 
-        // Create the aiContent record first since FaqsContent pipeline uses update() not updateOrCreate()
         $project->aiContent()->create([
             'project_id' => $project->id,
             'slides_content' => [],
@@ -93,12 +90,11 @@ class GenerateFaqsContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateFaqsContent::class);
+        $pipeline = app(GenerateFaqs::class);
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -130,7 +126,7 @@ class GenerateFaqsContentTest extends TestCase
         }
         ```';
 
-        $testPipeline = app(GenerateFaqsContent::class);
+        $testPipeline = app(GenerateFaqs::class);
 
         $reflection = new \ReflectionClass($testPipeline);
         $method = $reflection->getMethod('parseFaqsFromResponse');

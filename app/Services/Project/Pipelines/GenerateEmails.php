@@ -8,35 +8,35 @@ use App\Clients\OpenAi;
 use App\Models\Project;
 use Illuminate\Support\Facades\View;
 
-class GenerateFaqsContent
+class GenerateEmails
 {
     public function __construct(private OpenAi $openAi) {}
 
     public function handle(Project $project, Closure $next): Project
     {
-        $prompt = View::make('prompts.faqs', compact('project'))->render();
+        \info('Generating emails for project', ['project_id' => $project->id]);
+        $prompt = View::make('prompts.emails', compact('project'))->render();
 
         $response = $this->openAi->chat([['role' => 'system', 'content' => $prompt]]);
+        $emails = $this->parseEmailsFromResponse($response);
 
-        $faqs = $this->parseFaqsFromResponse($response);
-
-        if (empty($faqs)) {
-            throw new Exception('Failed to generate faqs.');
+        if (empty($emails)) {
+            throw new Exception('Failed to generate email content.');
         }
 
         $project->aiContent()->update([
-            'faqs' => $faqs,
+            'emails' => $emails,
         ]);
 
         return $next($project);
     }
 
-    private function parseFaqsFromResponse(string $response): array
+    private function parseEmailsFromResponse(string $response): array
     {
         $cleanResponse = $this->removeCodeBlocks($response);
         $jsonData = $this->decodeJson($cleanResponse);
 
-        return $jsonData['faqs'] ?? [];
+        return $jsonData['emails'] ?? [];
     }
 
     private function removeCodeBlocks(string $response): string

@@ -9,10 +9,10 @@ use App\Models\Project;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\View;
 use Illuminate\Foundation\Testing\WithFaker;
+use App\Services\Project\Pipelines\GenerateEmails;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\Project\Pipelines\GenerateEmailContent;
 
-class GenerateEmailContentTest extends TestCase
+class GenerateEmailsTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
@@ -29,7 +29,6 @@ class GenerateEmailContentTest extends TestCase
             ],
         ]);
 
-        // Create the aiContent record first since EmailContent pipeline uses update() not updateOrCreate()
         $project->aiContent()->create([
             'project_id' => $project->id,
             'slides_content' => [],
@@ -44,12 +43,11 @@ class GenerateEmailContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateEmailContent::class);
+        $pipeline = app(GenerateEmails::class);
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -78,7 +76,6 @@ class GenerateEmailContentTest extends TestCase
             'sponsor_title' => 'CEO',
         ]);
 
-        // Create the aiContent record first since EmailContent pipeline uses update() not updateOrCreate()
         $project->aiContent()->create([
             'project_id' => $project->id,
             'slides_content' => [],
@@ -93,12 +90,11 @@ class GenerateEmailContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateEmailContent::class);
+        $pipeline = app(GenerateEmails::class);
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -144,7 +140,7 @@ class GenerateEmailContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateEmailContent::class);
+        $pipeline = app(GenerateEmails::class);
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
@@ -167,7 +163,7 @@ class GenerateEmailContentTest extends TestCase
         }
         ```';
 
-        $testPipeline = app(GenerateEmailContent::class);
+        $testPipeline = app(GenerateEmails::class);
 
         $reflection = new \ReflectionClass($testPipeline);
         $method = $reflection->getMethod('parseEmailsFromResponse');

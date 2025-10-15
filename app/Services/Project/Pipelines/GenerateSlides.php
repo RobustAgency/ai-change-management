@@ -8,12 +8,13 @@ use App\Clients\OpenAi;
 use App\Models\Project;
 use Illuminate\Support\Facades\View;
 
-class GenerateSlidesContent
+class GenerateSlides
 {
     public function __construct(private OpenAi $openAi) {}
 
     public function handle(Project $project, Closure $next): Project
     {
+        \info('Generating slides for project', ['project_id' => $project->id]);
         $view = 'prompts.slides_template_'.($project->template_id ?? 1);
 
         $prompt = View::make($view, compact('project'))->render();

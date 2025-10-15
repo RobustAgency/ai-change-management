@@ -23,6 +23,7 @@ class ProjectContent extends Model
         'slides_content' => 'array',
         'emails' => 'array',
         'faqs' => 'array',
+        'video_script' => 'array',
     ];
 
     /**

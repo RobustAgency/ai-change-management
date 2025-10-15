@@ -3,20 +3,22 @@
 namespace Tests\Feature\Services\Project\Pipelines;
 
 use Tests\TestCase;
+use App\Models\User;
+use App\Enums\UserRole;
 use App\Models\Project;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\View;
+use App\Services\Project\Pipelines\GenerateSlides;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\Project\Pipelines\GenerateSlidesContent;
 
-class GenerateSlidesContentTest extends TestCase
+class GenerateSlidesTest extends TestCase
 {
     use RefreshDatabase;
 
     public function test_generates_slides_content_successfully(): void
     {
-        $user = \App\Models\User::factory()->create(['role' => \App\Enums\UserRole::USER]);
-        $project = \App\Models\Project::factory()->create([
+        $user = User::factory()->create(['role' => UserRole::USER]);
+        $project = Project::factory()->create([
             'user_id' => $user->id,
             'template_id' => 1,
             'name' => 'Test Project',
@@ -56,12 +58,11 @@ class GenerateSlidesContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateSlidesContent::class);
+        $pipeline = app(GenerateSlides::class);
         $result = $pipeline->handle($project, $nextCallback);
 
         $this->assertSame($project, $result);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -104,7 +105,7 @@ class GenerateSlidesContentTest extends TestCase
             return $proj;
         };
 
-        $pipeline = app(GenerateSlidesContent::class);
+        $pipeline = app(GenerateSlides::class);
         $pipeline->handle($project, $nextCallback);
     }
 }

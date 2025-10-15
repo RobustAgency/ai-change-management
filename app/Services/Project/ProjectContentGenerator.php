@@ -6,9 +6,10 @@ use Throwable;
 use App\Models\Project;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\DB;
-use App\Services\Project\Pipelines\GenerateFaqsContent;
-use App\Services\Project\Pipelines\GenerateEmailContent;
-use App\Services\Project\Pipelines\GenerateSlidesContent;
+use App\Services\Project\Pipelines\GenerateFaqs;
+use App\Services\Project\Pipelines\GenerateEmails;
+use App\Services\Project\Pipelines\GenerateSlides;
+use App\Services\Project\Pipelines\GenerateVideoScript;
 
 class ProjectContentGenerator
 {
@@ -24,10 +25,10 @@ class ProjectContentGenerator
             $this->pipeline
                 ->send($project)
                 ->through([
-                    GenerateSlidesContent::class,
-                    GenerateEmailContent::class,
-                    GenerateFaqsContent::class,
-                    // Future: GenerateFaqsContent::class, GenerateVideoScript::class, etc.
+                    GenerateSlides::class,
+                    GenerateEmails::class,
+                    GenerateFaqs::class,
+                    GenerateVideoScript::class,
                 ])
                 ->thenReturn();
 
