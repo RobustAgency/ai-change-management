@@ -32,7 +32,7 @@ class GenerateVideoScriptTest extends TestCase
             'slides_content' => [],
             'emails' => [],
             'faqs' => [],
-            'video_script' => [],
+            'video_script' => '[]',
         ]);
 
         $this->mockOpenAi();
@@ -52,11 +52,13 @@ class GenerateVideoScriptTest extends TestCase
 
         $this->assertNotNull($aiContent);
         $this->assertNotEmpty($aiContent->video_script);
-        $this->assertIsArray($aiContent->video_script);
-        $this->assertArrayHasKey('scene', $aiContent->video_script[0]);
-        $this->assertArrayHasKey('narration', $aiContent->video_script[0]);
-        $this->assertEquals(1, $aiContent->video_script[0]['scene']);
-        $this->assertStringContainsString('Welcome to our project', $aiContent->video_script[0]['narration']);
+
+        $videoScript = json_decode($aiContent->video_script, true);
+        $this->assertIsArray($videoScript);
+        $this->assertArrayHasKey('scene', $videoScript[0]);
+        $this->assertArrayHasKey('narration', $videoScript[0]);
+        $this->assertEquals(1, $videoScript[0]['scene']);
+        $this->assertStringContainsString('Welcome to our project', $videoScript[0]['narration']);
     }
 
     public function test_handles_complex_project_data(): void
@@ -82,7 +84,7 @@ class GenerateVideoScriptTest extends TestCase
             'slides_content' => [],
             'emails' => [],
             'faqs' => [],
-            'video_script' => [],
+            'video_script' => '[]',
         ]);
 
         $this->mockOpenAiWithMultipleScenes();
@@ -101,9 +103,11 @@ class GenerateVideoScriptTest extends TestCase
         $aiContent = $project->aiContent;
 
         $this->assertNotNull($aiContent);
-        $this->assertCount(4, $aiContent->video_script);
 
-        foreach ($aiContent->video_script as $scene) {
+        $videoScript = json_decode($aiContent->video_script, true);
+        $this->assertCount(4, $videoScript);
+
+        foreach ($videoScript as $scene) {
             $this->assertArrayHasKey('scene', $scene);
             $this->assertArrayHasKey('type', $scene);
             $this->assertArrayHasKey('narration', $scene);

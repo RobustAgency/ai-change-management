@@ -32,6 +32,7 @@ class ProjectContentGenerator
                 ])
                 ->thenReturn();
 
+            \info('Finished generating project content', ['project_id' => $project->id]);
             DB::commit();
         } catch (Throwable $th) {
             DB::rollBack();

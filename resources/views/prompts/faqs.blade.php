@@ -40,7 +40,6 @@ Return **ONLY** a **valid JSON object**. Use \\n for line breaks and escape quot
     { "question": "What is {{ $project->name }}?", "answer": "" },
     { "question": "Why is {{ $project->client_organization }} launching {{ $project->name }}?", "answer": "" },
     { "question": "How will {{ $project->name }} impact daily work?", "answer": "" },
-    ...
   ]
 }
 ```

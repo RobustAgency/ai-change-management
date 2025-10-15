@@ -124,7 +124,10 @@ class ProjectControllerTest extends TestCase
     {
         Queue::fake();
         $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
-        $project = Project::factory()->create(['user_id' => $user->id]);
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Completed,
+        ]);
 
         $response = $this->actingAs($user)->getJson("/api/projects/generate-content/{$project->id}");
 
@@ -210,5 +213,24 @@ class ProjectControllerTest extends TestCase
             'error' => false,
             'message' => 'Project deleted successfully',
         ]);
+    }
+
+    public function test_user_cannot_generate_content_for_non_completed_project(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Draft,
+        ]);
+
+        $response = $this->actingAs($user)->getJson("/api/projects/generate-content/{$project->id}");
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'message' => 'Project must be completed before generating AI content.',
+        ]);
+
+        Queue::assertNotPushed(GenerateProjectContentJob::class);
     }
 }

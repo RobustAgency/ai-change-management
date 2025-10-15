@@ -31,7 +31,7 @@ class GenerateVideoScript
         }
 
         $project->aiContent()->update([
-            'video_script' => $videoScript,
+            'video_script' => json_encode($videoScript),
         ]);
 
         return $next($project);
