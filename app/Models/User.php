@@ -9,6 +9,8 @@ use App\Events\UserCreated;
 use Laravel\Cashier\Billable;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -112,5 +114,25 @@ class User extends Authenticatable
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Get the plan that the user belongs to.
+     *
+     * @return BelongsTo<Plan, $this>
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Get the projects that belong to the user.
+     *
+     * @return HasMany<Project, $this>
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
     }
 }

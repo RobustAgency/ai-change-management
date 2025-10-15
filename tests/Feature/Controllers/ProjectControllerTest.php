@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use Tests\TestCase;
+use App\Models\Plan;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Models\Project;
@@ -18,9 +19,20 @@ class ProjectControllerTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
+    private function createUserWithPlan(int $projectLimit = 5): User
+    {
+        $plan = Plan::factory()->create(['limit' => $projectLimit]);
+
+        return User::factory()->create([
+            'role' => UserRole::USER,
+            'is_active' => true,
+            'plan_id' => $plan->id,
+        ]);
+    }
+
     public function test_user_can_list_their_projects(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
 
         Project::factory()->count(3)->create(['user_id' => $user->id]);
 
@@ -46,7 +58,7 @@ class ProjectControllerTest extends TestCase
     public function test_user_can_store_project(): void
     {
         Queue::fake();
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
 
         $payload = [
             'template_id' => 1,
@@ -84,7 +96,7 @@ class ProjectControllerTest extends TestCase
         Queue::fake();
         Storage::fake('public');
 
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
 
         $payload = [
             'template_id' => 2,
@@ -107,7 +119,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_view_single_project(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
         $project = Project::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->getJson("/api/projects/{$project->id}");
@@ -123,7 +135,7 @@ class ProjectControllerTest extends TestCase
     public function test_user_can_generate_content(): void
     {
         Queue::fake();
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
         $project = Project::factory()->create([
             'user_id' => $user->id,
             'status' => ProjectStatus::Completed,
@@ -144,7 +156,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_user_can_update_project(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
         $project = Project::factory()->create(['user_id' => $user->id, 'name' => 'Old Name', 'launch_date' => now()->toDateTimeString()]);
 
         $payload = [
@@ -172,7 +184,7 @@ class ProjectControllerTest extends TestCase
     {
         Storage::fake('public');
 
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
 
         $project = Project::factory()->create(['user_id' => $user->id]);
 
@@ -203,7 +215,7 @@ class ProjectControllerTest extends TestCase
 
     public function test_delete_project(): void
     {
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
         $project = Project::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->deleteJson("/api/projects/{$project->id}");
@@ -218,7 +230,7 @@ class ProjectControllerTest extends TestCase
     public function test_user_cannot_generate_content_for_non_completed_project(): void
     {
         Queue::fake();
-        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+        $user = $this->createUserWithPlan();
         $project = Project::factory()->create([
             'user_id' => $user->id,
             'status' => ProjectStatus::Draft,
@@ -232,5 +244,109 @@ class ProjectControllerTest extends TestCase
         ]);
 
         Queue::assertNotPushed(GenerateProjectContentJob::class);
+    }
+
+    public function test_user_cannot_create_project_without_plan(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::USER, 'is_active' => true]);
+
+        $payload = [
+            'template_id' => 1,
+            'name' => 'Test Project',
+            'launch_date' => now()->addMonth()->toDateTimeString(),
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/projects', $payload);
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'message' => 'You must have an active subscription plan to create projects.',
+        ]);
+    }
+
+    public function test_user_cannot_create_project_when_plan_limit_reached(): void
+    {
+        $user = $this->createUserWithPlan(2); // Plan with limit of 2 projects
+
+        // Create 2 projects to reach the limit
+        Project::factory()->count(2)->create(['user_id' => $user->id]);
+
+        $payload = [
+            'template_id' => 1,
+            'name' => 'Third Project',
+            'launch_date' => now()->addMonth()->toDateTimeString(),
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/projects', $payload);
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'message' => 'You have reached your plan limit of 2 projects. Please upgrade your plan to create more projects.',
+        ]);
+    }
+
+    public function test_user_can_create_project_within_plan_limit(): void
+    {
+        $user = $this->createUserWithPlan(3); // Plan with limit of 3 projects
+
+        // Create 1 project, still within limit
+        Project::factory()->create(['user_id' => $user->id]);
+
+        $payload = [
+            'template_id' => 1,
+            'name' => 'Second Project',
+            'launch_date' => now()->addMonth()->toDateTimeString(),
+            'status' => 'draft',
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/projects', $payload);
+
+        $response->assertStatus(201);
+        $response->assertJson([
+            'error' => false,
+            'message' => 'Project created successfully',
+        ]);
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'Second Project',
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_user_cannot_update_project_with_ai_content(): void
+    {
+        $user = $this->createUserWithPlan();
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Original Name',
+            'launch_date' => now()->toDateTimeString(),
+        ]);
+
+        // Create AI content for the project
+        $project->aiContent()->create([
+            'slides' => 'Test slides content',
+            'emails' => 'Test emails content',
+            'faqs' => 'Test FAQs content',
+            'video_script' => '{"scenes": [{"title": "Test Scene"}]}',
+        ]);
+
+        $payload = [
+            'name' => 'Updated Project Name',
+            'launch_date' => now()->toDateTimeString(),
+            'business_goals' => 'Improve processes',
+        ];
+
+        $response = $this->actingAs($user)->postJson("/api/projects/{$project->id}", $payload);
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'message' => 'You cannot edit a project once AI content has been generated.',
+        ]);
+
+        // Verify the project name was not updated
+        $this->assertDatabaseHas('projects', [
+            'id' => $project->id,
+            'name' => 'Original Name',
+        ]);
     }
 }

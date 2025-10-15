@@ -1,10 +1,12 @@
 <?php
 
+use App\Models\Project;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SupabaseController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 
 Route::post('/auth/login', [SupabaseController::class, 'login']);
@@ -22,6 +24,8 @@ Route::middleware(['auth:supabase', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth:supabase', 'role:user', 'user.active'])->group(function () {
+    Route::get('/dashboard', DashboardController::class);
+
     Route::prefix('/plans')->controller(BillingController::class)->group(function () {
         Route::get('', 'index');
         Route::get('subscribe/{plan}', 'subscribe');
@@ -37,7 +41,7 @@ Route::middleware(['auth:supabase', 'role:user', 'user.active'])->group(function
 
     Route::prefix('projects')->controller(ProjectController::class)->group(function () {
         Route::get('', 'index');
-        Route::post('', 'store');
+        Route::post('', 'store')->can('create', Project::class);
         Route::get('generate-content/{project}', 'generateContent')->can('generateContent', 'project');
         Route::get('{project}', 'show')->can('view', 'project');
         Route::post('{project}', 'update')->can('update', 'project');
