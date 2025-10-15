@@ -8,11 +8,14 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SupabaseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 
 Route::post('/auth/login', [SupabaseController::class, 'login']);
 
 Route::middleware(['auth:supabase', 'role:admin'])->group(function () {
     Route::prefix('/admin')->group(function () {
+        Route::get('/dashboard', AdminDashboardController::class);
+
         Route::prefix('/users')->controller(UserController::class)->group(function () {
             Route::get('', 'index');
             Route::get('/search', 'search');
