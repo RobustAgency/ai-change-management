@@ -15,12 +15,10 @@ class ProjectRepository
      */
     public function getFilteredProjects(User $user, array $filters = []): LengthAwarePaginator
     {
-        $query = Project::with('media')->where('user_id', $user->id);
+        $query = Project::where('user_id', $user->id);
 
         if (! empty($filters['term'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', "%{$filters['term']}%");
-            });
+            $query->where('name', 'like', "%{$filters['term']}%");
         }
 
         if (! empty($filters['status'])) {

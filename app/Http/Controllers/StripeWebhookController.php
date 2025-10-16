@@ -7,6 +7,7 @@ use Stripe\Webhook;
 use Illuminate\Http\Request;
 use Stripe\Exception\SignatureVerificationException;
 use App\Http\Handlers\PaymentSucceededWebhookHandler;
+use App\Http\Handlers\CheckoutSessionCompletedHandler;
 
 class StripeWebhookController extends Controller
 {
@@ -19,13 +20,20 @@ class StripeWebhookController extends Controller
                 'handler' => PaymentSucceededWebhookHandler::class,
                 'callback' => \secure_url('/api/webhooks'),
             ],
+            [
+                'name' => 'checkout.session.completed',
+                'handler' => CheckoutSessionCompletedHandler::class,
+                'callback' => secure_url('/api/webhooks'),
+            ],
         ];
     }
 
     public function __invoke(Request $request)
     {
         $this->validateSecretKey($request);
+
         $payload = $request->getContent();
+
         $event = json_decode($payload, true);
 
         $type = $event['type'] ?? null;

@@ -14,12 +14,14 @@ class ProjectContent extends Model
     protected $fillable = [
         'project_id',
         'slides_content',
+        'emails',
         'faqs',
         'video_script',
     ];
 
     protected $casts = [
         'slides_content' => 'array',
+        'emails' => 'array',
         'faqs' => 'array',
     ];
 

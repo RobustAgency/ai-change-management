@@ -9,6 +9,8 @@ use App\Events\UserCreated;
 use Laravel\Cashier\Billable;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -112,5 +114,50 @@ class User extends Authenticatable
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Get the plan that the user belongs to.
+     *
+     * @return BelongsTo<Plan, $this>
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Get the projects that belong to the user.
+     *
+     * @return HasMany<Project, $this>
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    public function syncStripeSubscription(string $stripeSubscriptionId): void
+    {
+        $subscription = $this->stripe()->subscriptions->retrieve($stripeSubscriptionId, []);
+        $this->subscriptions()->updateOrCreate(
+            ['stripe_id' => $subscription->id],
+            [
+                'type' => 'default',
+                'stripe_status' => $subscription->status,
+                'stripe_price' => $subscription->items->data[0]->price->id ?? null,
+                'quantity' => $subscription->items->data[0]->quantity ?? 1,
+                'trial_ends_at' => isset($subscription->trial_end)
+                    ? \Carbon\Carbon::createFromTimestamp($subscription->trial_end)
+                    : null,
+                'ends_at' => $subscription->cancel_at ? \Carbon\Carbon::createFromTimestamp($subscription->cancel_at) : null,
+            ]
+        );
+
+        foreach ($subscription->items->data as $item) {
+            $this->subscription('default')->items()->updateOrCreate(
+                ['stripe_id' => $item->id],
+                ['stripe_product' => $item->price->product, 'stripe_price' => $item->price->id, 'quantity' => $item->quantity]
+            );
+        }
     }
 }
