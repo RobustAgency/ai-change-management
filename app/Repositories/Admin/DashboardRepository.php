@@ -3,6 +3,7 @@
 namespace App\Repositories\Admin;
 
 use App\Models\User;
+use App\Enums\UserRole;
 use App\Models\Project;
 
 class DashboardRepository
@@ -12,7 +13,7 @@ class DashboardRepository
      */
     public function getTotalUsers(): int
     {
-        return User::count();
+        return User::where('role', '!=', UserRole::ADMIN)->count();
     }
 
     /**
@@ -20,7 +21,7 @@ class DashboardRepository
      */
     public function getActiveUsers(): int
     {
-        return User::where('is_active', true)->count();
+        return User::where('is_active', true)->where('role', '!=', UserRole::ADMIN)->count();
     }
 
     /**
@@ -28,7 +29,7 @@ class DashboardRepository
      */
     public function getInactiveUsers(): int
     {
-        return User::where('is_active', false)->count();
+        return User::where('is_active', false)->where('role', '!=', UserRole::ADMIN)->count();
     }
 
     /**

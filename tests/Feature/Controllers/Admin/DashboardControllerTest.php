@@ -57,8 +57,8 @@ class DashboardControllerTest extends TestCase
             'error' => false,
             'message' => 'Dashboard stats retrieved successfully',
             'data' => [
-                'total_users' => 1,
-                'active_users' => 1,
+                'total_users' => 0,
+                'active_users' => 0,
                 'inactive_users' => 0,
                 'total_projects' => 0,
             ],

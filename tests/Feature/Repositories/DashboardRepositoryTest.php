@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Repositories;
+namespace Tests\Feature\Repositories;
 
 use Carbon\Carbon;
 use Tests\TestCase;
@@ -35,13 +35,11 @@ class DashboardRepositoryTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // Create 2 projects this month
         Project::factory()->count(2)->create([
             'user_id' => $user->id,
             'created_at' => Carbon::now()->startOfMonth()->addDays(5),
         ]);
 
-        // Create 1 project last month
         Project::factory()->create([
             'user_id' => $user->id,
             'created_at' => Carbon::now()->subMonth()->addDays(5),
@@ -57,7 +55,6 @@ class DashboardRepositoryTest extends TestCase
         $user = User::factory()->create();
         $projects = Project::factory()->count(3)->create(['user_id' => $user->id]);
 
-        // Add AI content to 2 projects
         foreach ($projects->take(2) as $project) {
             $project->aiContent()->create([
                 'slides' => 'Test slides',
@@ -77,7 +74,6 @@ class DashboardRepositoryTest extends TestCase
         $user = User::factory()->create();
         $projects = Project::factory()->count(4)->create(['user_id' => $user->id]);
 
-        // Add AI content to 1 project
         $projects->first()->aiContent()->create([
             'slides' => 'Test slides',
             'emails' => 'Test emails',
@@ -87,26 +83,23 @@ class DashboardRepositoryTest extends TestCase
 
         $count = $this->repository->getProjectsPendingGeneration($user);
 
-        $this->assertEquals(3, $count); // 4 total - 1 with content = 3 pending
+        $this->assertEquals(3, $count);
     }
 
     public function test_get_dashboard_stats_returns_complete_array(): void
     {
         $user = User::factory()->create();
 
-        // Create 3 projects from last month
         $projects = Project::factory()->count(3)->create([
             'user_id' => $user->id,
             'created_at' => Carbon::now()->subMonth()->addDays(5),
         ]);
 
-        // Create 2 projects this month
         Project::factory()->count(2)->create([
             'user_id' => $user->id,
             'created_at' => Carbon::now()->startOfMonth()->addDays(5),
         ]);
 
-        // Add AI content to 2 projects
         foreach ($projects->take(2) as $project) {
             $project->aiContent()->create([
                 'slides' => 'Test slides',

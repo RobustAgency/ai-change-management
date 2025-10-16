@@ -26,6 +26,7 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'plan_id' => $this->plan_id,
             'email_verified_at' => $this->email_verified_at,
+            'projects' => ProjectResource::collection($this->whenLoaded('projects')),
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),
         ];
