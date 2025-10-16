@@ -55,7 +55,7 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
-        $user->load('projects');
+        $user->load('projects', 'plan');
 
         return response()->json([
             'error' => false,

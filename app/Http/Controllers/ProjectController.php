@@ -93,7 +93,7 @@ class ProjectController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Project updated successfully',
-            'data' => $project->load('media'),
+            'data' => null,
         ]);
     }
 

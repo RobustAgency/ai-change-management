@@ -171,7 +171,7 @@ class ProjectControllerTest extends TestCase
         $response->assertJson([
             'error' => false,
             'message' => 'Project updated successfully',
-            'data' => ['name' => 'Updated Project Name'],
+            'data' => null,
         ]);
 
         $this->assertDatabaseHas('projects', [

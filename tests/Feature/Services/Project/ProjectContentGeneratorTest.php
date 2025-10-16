@@ -8,8 +8,12 @@ use App\Enums\UserRole;
 use App\Models\Project;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Event;
+use App\Events\ProjectContentGenerated;
+use Illuminate\Support\Facades\Notification;
 use App\Services\Project\ProjectContentGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Notifications\User\ProjectContentGeneratedNotification;
 
 class ProjectContentGeneratorTest extends TestCase
 {
@@ -35,7 +39,6 @@ class ProjectContentGeneratorTest extends TestCase
         $generator = app(ProjectContentGenerator::class);
         $generator->generateContent($project);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -63,7 +66,6 @@ class ProjectContentGeneratorTest extends TestCase
             $generator = app(ProjectContentGenerator::class);
             $generator->generateContent($project);
 
-            // Refresh the project to get the updated aiContent
             $project->refresh();
             $aiContent = $project->aiContent;
 
@@ -91,7 +93,6 @@ class ProjectContentGeneratorTest extends TestCase
         $generator = app(ProjectContentGenerator::class);
         $generator->generateContent($project);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -124,7 +125,6 @@ class ProjectContentGeneratorTest extends TestCase
         $generator = app(ProjectContentGenerator::class);
         $generator->generateContent($project);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -152,7 +152,6 @@ class ProjectContentGeneratorTest extends TestCase
         $generator = app(ProjectContentGenerator::class);
         $generator->generateContent($project);
 
-        // Refresh the project to get the updated aiContent
         $project->refresh();
         $aiContent = $project->aiContent;
 
@@ -254,13 +253,11 @@ class ProjectContentGeneratorTest extends TestCase
             ],
         ];
 
-        // Mock HTTP responses for slides, email, faqs and video script generation
         Http::fake([
             'https://api.openai.com/v1/chat/completions' => function ($request) use ($mockSlidesResponse, $mockEmailResponse, $mockFaqsResponse, $mockVideoScriptResponse) {
                 static $callCount = 0;
                 $callCount++;
 
-                // First call returns slides, second call returns emails, third call returns faqs, fourth call returns video script
                 if ($callCount % 4 === 1) {
                     return Http::response([
                         'choices' => [
@@ -293,7 +290,7 @@ class ProjectContentGeneratorTest extends TestCase
                     ], 200);
                 } else {
                     if ($callCount % 4 === 0) {
-                        $callCount = 0; // Reset for next test
+                        $callCount = 0;
                     }
 
                     return Http::response([
@@ -330,6 +327,10 @@ class ProjectContentGeneratorTest extends TestCase
             ->with('prompts.video_script', \Mockery::type('array'))
             ->andReturnSelf();
 
+        View::shouldReceive('make')
+            ->with('emails.user.project-content-generated', \Mockery::type('array'))
+            ->andReturnSelf();
+
         View::shouldReceive('render')
             ->andReturn('Mocked prompt content');
     }
@@ -352,7 +353,54 @@ class ProjectContentGeneratorTest extends TestCase
             ->with('prompts.video_script', \Mockery::type('array'))
             ->andReturnSelf();
 
+        View::shouldReceive('make')
+            ->with('emails.user.project-content-generated', \Mockery::type('array'))
+            ->andReturnSelf();
+
         View::shouldReceive('render')
             ->andReturn('Mocked prompt content for template '.$templateId);
+    }
+
+    public function test_project_content_generator_dispatches_event_on_success(): void
+    {
+        Event::fake();
+
+        $user = User::factory()->create(['role' => UserRole::USER]);
+        $project = Project::factory()->create(['user_id' => $user->id]);
+
+        $this->mockOpenAi();
+        $this->mockViews();
+
+        $generator = app(ProjectContentGenerator::class);
+        $generator->generateContent($project);
+
+        Event::assertDispatched(ProjectContentGenerated::class, function ($event) use ($project) {
+            return $event->project->id === $project->id;
+        });
+    }
+
+    public function test_project_content_generated_event_sends_notification(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['role' => UserRole::USER]);
+        $project = Project::factory()->create(['user_id' => $user->id]);
+
+        View::shouldReceive('make')
+            ->with('emails.user.project-content-generated', \Mockery::type('array'))
+            ->andReturnSelf();
+
+        View::shouldReceive('render')
+            ->andReturn('<html>Mocked email content</html>');
+
+        ProjectContentGenerated::dispatch($project);
+
+        Notification::assertSentTo(
+            $user,
+            ProjectContentGeneratedNotification::class,
+            function ($notification) use ($project) {
+                return $notification->project->id === $project->id;
+            }
+        );
     }
 }

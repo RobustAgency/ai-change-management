@@ -6,6 +6,7 @@ use Throwable;
 use App\Models\Project;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\DB;
+use App\Events\ProjectContentGenerated;
 use App\Services\Project\Pipelines\GenerateFaqs;
 use App\Services\Project\Pipelines\GenerateEmails;
 use App\Services\Project\Pipelines\GenerateSlides;
@@ -34,6 +35,7 @@ class ProjectContentGenerator
 
             \info('Finished generating project content', ['project_id' => $project->id]);
             DB::commit();
+            ProjectContentGenerated::dispatch($project);
         } catch (Throwable $th) {
             DB::rollBack();
             \logger()->error('Failed generating project content', ['project_id' => $project->id, 'error' => $th->getMessage()]);
