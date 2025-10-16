@@ -37,9 +37,9 @@ Return **ONLY** a **valid JSON object**. Use \\n for line breaks and escape quot
 ```json
 {
   "faqs": [
-    { "question": "What is {{ $project->name }}?", "answer": "" },
-    { "question": "Why is {{ $project->client_organization }} launching {{ $project->name }}?", "answer": "" },
-    { "question": "How will {{ $project->name }} impact daily work?", "answer": "" },
+    { "question": "What is {{ $project->name }}?", "answer": "" } \\n,
+    { "question": "Why is {{ $project->client_organization }} launching {{ $project->name }}?", "answer": "" } \\n,
+    { "question": "How will {{ $project->name }} impact daily work?", "answer": "" } \\n,
   ]
 }
 ```
