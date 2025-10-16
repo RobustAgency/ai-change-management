@@ -20,6 +20,7 @@ class ProjectResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'template_id' => $this->template_id,
             'name' => $this->name,
             'launch_date' => $this->launch_date?->toIso8601String(),
             'type' => $this->type,
@@ -31,7 +32,12 @@ class ProjectResource extends JsonResource
             'stakeholders' => $this->stakeholders,
             'client_organization' => $this->client_organization,
             'status' => $this->status,
-            'media' => $this->whenLoaded('media'),
+            'is_editable' => $this->isEditable(),
+            'media' => $this->whenLoaded('media', function () {
+                return $this->media->map(function ($media) {
+                    return $media->getUrl();
+                })->toArray();
+            }),
             'ai_content' => $this->whenLoaded('aiContent'),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

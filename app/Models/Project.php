@@ -17,6 +17,7 @@ class Project extends Model implements HasMedia
 
     protected $fillable = [
         'user_id',
+        'template_id',
         'name',
         'launch_date',
         'type',
@@ -35,6 +36,9 @@ class Project extends Model implements HasMedia
         'launch_date' => 'datetime',
         'status' => ProjectStatus::class,
     ];
+
+    // @phpstan-ignore rules.modelAppends
+    protected $appends = ['is_editable'];
 
     /**
      * Get the user that owns the project
@@ -64,5 +68,20 @@ class Project extends Model implements HasMedia
     public function getClientLogoUrlAttribute(): ?string
     {
         return $this->getFirstMediaUrl('client_logos') ?: null;
+    }
+
+    public function hasContentGenerated(): bool
+    {
+        return $this->aiContent()->exists();
+    }
+
+    public function getIsEditableAttribute(): bool
+    {
+        return ! $this->hasContentGenerated();
+    }
+
+    public function isEditable(): bool
+    {
+        return $this->getIsEditableAttribute();
     }
 }

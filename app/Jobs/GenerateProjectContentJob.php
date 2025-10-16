@@ -8,7 +8,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use App\Repositories\ProjectContentRepository;
 use App\Services\Project\ProjectContentGenerator;
 
 class GenerateProjectContentJob implements ShouldQueue
@@ -20,19 +19,20 @@ class GenerateProjectContentJob implements ShouldQueue
      */
     public function __construct(private Project $project) {}
 
-    public function getProject(): Project
-    {
-        return $this->project;
-    }
-
     /**
      * Execute the job.
      */
-    public function handle(ProjectContentGenerator $contentGenerator, ProjectContentRepository $repository): void
+    public function handle(ProjectContentGenerator $contentGenerator): void
     {
         \info('GenerateProjectContentJob dispatched: '.$this->project->id);
-        $data = $contentGenerator->generateContent($this->project);
+        $contentGenerator->generateContent($this->project);
+    }
 
-        $repository->upsertForProject($this->project, $data);
+    /**
+     * Get the project for this job.
+     */
+    public function getProject(): Project
+    {
+        return $this->project;
     }
 }

@@ -2,54 +2,44 @@
 
 namespace App\Services\Project;
 
-use App\Clients\OpenAi;
+use Throwable;
 use App\Models\Project;
+use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\DB;
+use App\Events\ProjectContentGenerated;
+use App\Services\Project\Pipelines\GenerateFaqs;
+use App\Services\Project\Pipelines\GenerateEmails;
+use App\Services\Project\Pipelines\GenerateSlides;
+use App\Services\Project\Pipelines\GenerateVideoScript;
 
 class ProjectContentGenerator
 {
     public function __construct(
-        private OpenAi $openAi,
-        private ProjectPromptBuilder $promptBuilder
+        private Pipeline $pipeline
     ) {}
 
-    /**
-     * Generate structured content for a Project using the LLM.
-     */
-    public function generateContent(Project $project): array
+    public function generateContent(Project $project): void
     {
-        $prompt = $this->promptBuilder->build($project);
+        DB::beginTransaction();
 
-        $messages = [
-            ['role' => 'system', 'content' => $prompt],
-        ];
+        try {
+            $this->pipeline
+                ->send($project)
+                ->through([
+                    GenerateSlides::class,
+                    GenerateEmails::class,
+                    GenerateFaqs::class,
+                    GenerateVideoScript::class,
+                ])
+                ->thenReturn();
 
-        $content = $this->openAi->chat($messages);
-        $parsed = json_decode($content, true);
-
-        if (! is_array($parsed)) {
-            $parsed = $this->extractJson($content);
+            \info('Finished generating project content', ['project_id' => $project->id]);
+            DB::commit();
+            ProjectContentGenerated::dispatch($project);
+        } catch (Throwable $th) {
+            DB::rollBack();
+            \logger()->error('Failed generating project content', ['project_id' => $project->id, 'error' => $th->getMessage()]);
+            throw $th;
         }
-
-        return [
-            'slides_content' => $parsed['slides_content'] ?? [],
-        ];
-    }
-
-    /**
-     * Try to extract JSON block from a text.
-     */
-    private function extractJson(?string $text): array
-    {
-        if (empty($text)) {
-            return [];
-        }
-
-        if (preg_match('/\{(?:[^{}]|(?R))*\}/s', $text, $matches)) {
-            $json = $matches[0];
-
-            return json_decode($json, true) ?: [];
-        }
-
-        return [];
     }
 }

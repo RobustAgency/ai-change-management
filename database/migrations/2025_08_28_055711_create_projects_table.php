@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('template_id');
             $table->string('name');
             $table->dateTime('launch_date')->nullable();
             $table->string('type')->nullable();
