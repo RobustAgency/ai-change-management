@@ -138,7 +138,7 @@ class ProjectControllerTest extends TestCase
         $user = $this->createUserWithPlan();
         $project = Project::factory()->create([
             'user_id' => $user->id,
-            'status' => ProjectStatus::Completed,
+            'status' => ProjectStatus::Approved,
         ]);
 
         $response = $this->actingAs($user)->getJson("/api/projects/generate-content/{$project->id}");
@@ -240,7 +240,7 @@ class ProjectControllerTest extends TestCase
 
         $response->assertStatus(403);
         $response->assertJson([
-            'message' => 'Project must be completed before generating AI content.',
+            'message' => 'Project must be approved before generating AI content.',
         ]);
 
         Queue::assertNotPushed(GenerateProjectContentJob::class);

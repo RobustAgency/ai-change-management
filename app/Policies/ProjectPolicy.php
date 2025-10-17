@@ -80,8 +80,8 @@ class ProjectPolicy
             return Response::deny('AI content has already been generated for this project.');
         }
 
-        if ($project->status !== ProjectStatus::Completed) {
-            return Response::deny('Project must be completed before generating AI content.');
+        if ($project->status !== ProjectStatus::Approved) {
+            return Response::deny('Project must be approved before generating AI content.');
         }
 
         if ($project->content_generation_status === ProjectContentStatus::InProgress) {

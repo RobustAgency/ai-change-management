@@ -131,7 +131,7 @@ class ProjectPolicyTest extends TestCase
         $user = User::factory()->create();
         $project = Project::factory()->create([
             'user_id' => $user->id,
-            'status' => ProjectStatus::Completed,
+            'status' => ProjectStatus::Approved,
             'content_generation_status' => ProjectContentStatus::Pending,
         ]);
 
@@ -194,7 +194,7 @@ class ProjectPolicyTest extends TestCase
         $response = $policy->generateContent($user, $project);
 
         $this->assertTrue($response->denied());
-        $this->assertEquals('Project must be completed before generating AI content.', $response->message());
+        $this->assertEquals('Project must be approved before generating AI content.', $response->message());
     }
 
     public function test_user_cannot_generate_content_when_generation_in_progress(): void
@@ -202,7 +202,7 @@ class ProjectPolicyTest extends TestCase
         $user = User::factory()->create();
         $project = Project::factory()->create([
             'user_id' => $user->id,
-            'status' => ProjectStatus::Completed,
+            'status' => ProjectStatus::Approved,
             'content_generation_status' => ProjectContentStatus::InProgress,
         ]);
 
@@ -218,7 +218,7 @@ class ProjectPolicyTest extends TestCase
         $user = User::factory()->create();
         $project = Project::factory()->create([
             'user_id' => $user->id,
-            'status' => ProjectStatus::Completed,
+            'status' => ProjectStatus::Approved,
             'content_generation_status' => ProjectContentStatus::Completed,
         ]);
 

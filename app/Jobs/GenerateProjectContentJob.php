@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use Throwable;
 use App\Models\Project;
+use App\Enums\ProjectStatus;
 use Illuminate\Bus\Queueable;
 use App\Enums\ProjectContentStatus;
 use Illuminate\Queue\SerializesModels;
@@ -31,12 +32,14 @@ class GenerateProjectContentJob implements ShouldQueue
             $contentGenerator->generateContent($this->project);
 
             $this->project->update([
+                'status' => ProjectStatus::Completed,
                 'content_generation_status' => ProjectContentStatus::Completed,
             ]);
 
             \info('Project content generation completed', ['project_id' => $this->project->id]);
         } catch (Throwable $e) {
             $this->project->update([
+                'status' => ProjectStatus::Approved,
                 'content_generation_status' => ProjectContentStatus::Failed,
             ]);
 
