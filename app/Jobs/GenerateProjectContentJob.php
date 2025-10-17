@@ -2,8 +2,10 @@
 
 namespace App\Jobs;
 
+use Throwable;
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
+use App\Enums\ProjectContentStatus;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,7 +27,26 @@ class GenerateProjectContentJob implements ShouldQueue
     public function handle(ProjectContentGenerator $contentGenerator): void
     {
         \info('GenerateProjectContentJob dispatched: '.$this->project->id);
-        $contentGenerator->generateContent($this->project);
+        try {
+            $contentGenerator->generateContent($this->project);
+
+            $this->project->update([
+                'content_generation_status' => ProjectContentStatus::Completed,
+            ]);
+
+            \info('Project content generation completed', ['project_id' => $this->project->id]);
+        } catch (Throwable $e) {
+            $this->project->update([
+                'content_generation_status' => ProjectContentStatus::Failed,
+            ]);
+
+            \logger()->error('Project content generation failed', [
+                'project_id' => $this->project->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**

@@ -33,7 +33,6 @@ class ProjectContentGenerator
                 ])
                 ->thenReturn();
 
-            \info('Finished generating project content', ['project_id' => $project->id]);
             DB::commit();
             ProjectContentGenerated::dispatch($project);
         } catch (Throwable $th) {

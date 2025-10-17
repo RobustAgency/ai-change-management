@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProjectStatus;
 use Spatie\MediaLibrary\HasMedia;
+use App\Enums\ProjectContentStatus;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -29,12 +30,14 @@ class Project extends Model implements HasMedia
         'stakeholders',
         'client_organization',
         'status',
+        'content_generation_status',
     ];
 
     protected $casts = [
         'stakeholders' => 'array',
         'launch_date' => 'datetime',
         'status' => ProjectStatus::class,
+        'content_generation_status' => ProjectContentStatus::class,
     ];
 
     // @phpstan-ignore rules.modelAppends
@@ -83,5 +86,20 @@ class Project extends Model implements HasMedia
     public function isEditable(): bool
     {
         return $this->getIsEditableAttribute();
+    }
+
+    public function markContentGenerationStarted(): void
+    {
+        $this->update(['content_generation_status' => ProjectContentStatus::InProgress]);
+    }
+
+    public function markContentGenerationCompleted(): void
+    {
+        $this->update(['content_generation_status' => ProjectContentStatus::Completed]);
+    }
+
+    public function markContentGenerationFailed(): void
+    {
+        $this->update(['content_generation_status' => ProjectContentStatus::Failed]);
     }
 }

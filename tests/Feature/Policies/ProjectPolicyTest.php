@@ -7,7 +7,9 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Models\Project;
+use App\Enums\ProjectStatus;
 use App\Policies\ProjectPolicy;
+use App\Enums\ProjectContentStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ProjectPolicyTest extends TestCase
@@ -23,10 +25,9 @@ class ProjectPolicyTest extends TestCase
             'plan_id' => $plan->id,
         ]);
 
-        // Create 2 projects (within limit of 5)
         Project::factory()->count(2)->create(['user_id' => $user->id]);
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->create($user);
 
         $this->assertTrue($response->allowed());
@@ -41,10 +42,9 @@ class ProjectPolicyTest extends TestCase
             'plan_id' => $plan->id,
         ]);
 
-        // Create 3 projects (reached limit of 3)
         Project::factory()->count(3)->create(['user_id' => $user->id]);
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->create($user);
 
         $this->assertTrue($response->denied());
@@ -59,7 +59,7 @@ class ProjectPolicyTest extends TestCase
             'plan_id' => null,
         ]);
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->create($user);
 
         $this->assertTrue($response->denied());
@@ -75,10 +75,9 @@ class ProjectPolicyTest extends TestCase
             'plan_id' => $plan->id,
         ]);
 
-        // No projects created yet
         $this->assertEquals(0, $user->projects()->count());
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->create($user);
 
         $this->assertTrue($response->allowed());
@@ -89,7 +88,7 @@ class ProjectPolicyTest extends TestCase
         $user = User::factory()->create();
         $project = Project::factory()->create(['user_id' => $user->id]);
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->update($user, $project);
 
         $this->assertTrue($response->allowed());
@@ -101,7 +100,7 @@ class ProjectPolicyTest extends TestCase
         $otherUser = User::factory()->create();
         $project = Project::factory()->create(['user_id' => $otherUser->id]);
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->update($user, $project);
 
         $this->assertTrue($response->denied());
@@ -113,7 +112,6 @@ class ProjectPolicyTest extends TestCase
         $user = User::factory()->create();
         $project = Project::factory()->create(['user_id' => $user->id]);
 
-        // Create AI content for the project
         $project->aiContent()->create([
             'slides' => 'Test slides content',
             'emails' => 'Test emails content',
@@ -121,10 +119,113 @@ class ProjectPolicyTest extends TestCase
             'video_script' => '{"scenes": [{"title": "Test Scene"}]}',
         ]);
 
-        $policy = new ProjectPolicy;
+        $policy = app(ProjectPolicy::class);
         $response = $policy->update($user, $project);
 
         $this->assertTrue($response->denied());
         $this->assertEquals('You cannot edit a project once AI content has been generated.', $response->message());
+    }
+
+    public function test_user_can_generate_content_for_completed_project(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Completed,
+            'content_generation_status' => ProjectContentStatus::Pending,
+        ]);
+
+        $policy = app(ProjectPolicy::class);
+        $response = $policy->generateContent($user, $project);
+
+        $this->assertTrue($response->allowed());
+    }
+
+    public function test_user_cannot_generate_content_for_project_they_do_not_own(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $otherUser->id,
+            'status' => ProjectStatus::Completed,
+            'content_generation_status' => ProjectContentStatus::Pending,
+        ]);
+
+        $policy = app(ProjectPolicy::class);
+        $response = $policy->generateContent($user, $project);
+
+        $this->assertTrue($response->denied());
+        $this->assertEquals('You do not own this project.', $response->message());
+    }
+
+    public function test_user_cannot_generate_content_when_ai_content_already_exists(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Completed,
+            'content_generation_status' => ProjectContentStatus::Completed,
+        ]);
+
+        $project->aiContent()->create([
+            'slides' => 'Test slides content',
+            'emails' => 'Test emails content',
+            'faqs' => 'Test FAQs content',
+            'video_script' => '{"scenes": [{"title": "Test Scene"}]}',
+        ]);
+
+        $policy = app(ProjectPolicy::class);
+        $response = $policy->generateContent($user, $project);
+
+        $this->assertTrue($response->denied());
+        $this->assertEquals('AI content has already been generated for this project.', $response->message());
+    }
+
+    public function test_user_cannot_generate_content_for_non_completed_project(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Draft,
+            'content_generation_status' => ProjectContentStatus::Pending,
+        ]);
+
+        $policy = app(ProjectPolicy::class);
+        $response = $policy->generateContent($user, $project);
+
+        $this->assertTrue($response->denied());
+        $this->assertEquals('Project must be completed before generating AI content.', $response->message());
+    }
+
+    public function test_user_cannot_generate_content_when_generation_in_progress(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Completed,
+            'content_generation_status' => ProjectContentStatus::InProgress,
+        ]);
+
+        $policy = app(ProjectPolicy::class);
+        $response = $policy->generateContent($user, $project);
+
+        $this->assertTrue($response->denied());
+        $this->assertEquals('Content generation is already in progress.', $response->message());
+    }
+
+    public function test_user_cannot_generate_content_when_generation_completed(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $user->id,
+            'status' => ProjectStatus::Completed,
+            'content_generation_status' => ProjectContentStatus::Completed,
+        ]);
+
+        $policy = app(ProjectPolicy::class);
+        $response = $policy->generateContent($user, $project);
+
+        $this->assertTrue($response->denied());
+        $this->assertEquals('Content generation has already been completed.', $response->message());
     }
 }

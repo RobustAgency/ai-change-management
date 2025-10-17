@@ -54,8 +54,8 @@ class ProjectContentGeneratedTest extends TestCase
         $project->id = 1;
         $project->setRelation('user', $user);
 
-        $listener = new SendProjectContentGeneratedNotification;
-        $event = new ProjectContentGenerated($project);
+        $listener = app(SendProjectContentGeneratedNotification::class);
+        $event = app(ProjectContentGenerated::class, ['project' => $project]);
 
         $listener->handle($event);
 

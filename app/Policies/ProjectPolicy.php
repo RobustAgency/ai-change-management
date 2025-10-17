@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Project;
 use App\Enums\ProjectStatus;
+use App\Enums\ProjectContentStatus;
 use Illuminate\Auth\Access\Response;
 
 class ProjectPolicy
@@ -81,6 +82,14 @@ class ProjectPolicy
 
         if ($project->status !== ProjectStatus::Completed) {
             return Response::deny('Project must be completed before generating AI content.');
+        }
+
+        if ($project->content_generation_status === ProjectContentStatus::InProgress) {
+            return Response::deny('Content generation is already in progress.');
+        }
+
+        if ($project->content_generation_status === ProjectContentStatus::Completed) {
+            return Response::deny('Content generation has already been completed.');
         }
 
         return Response::allow();
