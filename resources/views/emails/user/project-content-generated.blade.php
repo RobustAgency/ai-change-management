@@ -214,12 +214,6 @@
                 </div>
             </div>
             
-            <div style="text-align: center;">
-                <a href="{{ config('app.url') . '/projects/' . $project->id }}" class="cta-button">
-                    View Your Project
-                </a>
-            </div>
-            
             <div class="footer-message">
                 You can now review, customize, and implement the generated content to ensure it perfectly aligns with your change management objectives. Each piece of content has been crafted specifically for your project requirements.
             </div>
