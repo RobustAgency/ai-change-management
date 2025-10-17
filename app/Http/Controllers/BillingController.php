@@ -11,13 +11,14 @@ use App\Actions\Stripe\CancelSubscription;
 use App\Actions\Stripe\ResumeSubscription;
 use App\Actions\Stripe\UpgradeSubscription;
 use App\Actions\Stripe\DowngradeSubscription;
+use App\Actions\Subscription\GetCurrentSubscriptionDetails;
 
 class BillingController extends Controller
 {
     public function __construct(
         private DowngradeSubscription $downgradeSubscription,
         private ResumeSubscription $resumeSubscription,
-        private UpgradeSubscription $upgradeSubscription
+        private UpgradeSubscription $upgradeSubscription,
     ) {}
 
     public function index(): JsonResponse
@@ -194,6 +195,27 @@ class BillingController extends Controller
             'message' => 'Upcoming invoice retrieved successfully.',
             'data' => $upcomingInvoice,
         ]);
+    }
 
+    public function currentSubscription(GetCurrentSubscriptionDetails $getCurrentSubscriptionDetails): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        try {
+            $subscriptionDetails = $getCurrentSubscriptionDetails->execute($user);
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Current subscription retrieved successfully.',
+                'data' => $subscriptionDetails,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 404);
+        }
     }
 }

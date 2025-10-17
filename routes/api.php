@@ -36,6 +36,7 @@ Route::middleware(['auth:supabase', 'role:user', 'user.active'])->group(function
         Route::get('cancel', 'cancel');
         Route::get('invoices', 'invoices');
         Route::get('upcoming-invoice', 'upcomingInvoice');
+        Route::get('current-subscription', 'currentSubscription');
     });
 
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {

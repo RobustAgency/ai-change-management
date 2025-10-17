@@ -7,6 +7,8 @@ use Tests\TestCase;
 use App\Models\Plan;
 use App\Models\User;
 use App\Enums\UserRole;
+use App\Models\Project;
+use App\Enums\BillingCycle;
 use Tests\Fakes\FakeSupabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -125,5 +127,202 @@ class BillingControllerTest extends TestCase
                 'status' => 'open',
             ],
         ]);
+    }
+
+    public function test_current_subscription_returns_complete_data(): void
+    {
+        $plan = Plan::factory()->create([
+            'name' => 'Standard',
+            'price' => 20.00,
+            'limit' => 10,
+            'currency' => 'USD',
+            'billing_cycle' => BillingCycle::Monthly,
+            'stripe_price_id' => 'price_test_123',
+        ]);
+
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_active' => true,
+            'plan_id' => $plan->id,
+        ]);
+
+        // Create some projects for the user
+        Project::factory()->count(3)->create(['user_id' => $user->id]);
+
+        // Mock the subscription
+        $user->subscriptions()->create([
+            'type' => 'default',
+            'stripe_id' => 'sub_test_123',
+            'stripe_status' => 'active',
+            'stripe_price' => $plan->stripe_price_id,
+            'quantity' => 1,
+            'trial_ends_at' => null,
+            'ends_at' => null,
+        ]);
+
+        $response = $this->actingAs($user, 'supabase')
+            ->getJson('/api/plans/current-subscription');
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'error',
+            'message',
+            'data' => [
+                'plan_name',
+                'price',
+                'currency',
+                'billing_cycle',
+                'status',
+                'next_billing_date',
+                'project_usage' => [
+                    'current',
+                    'limit',
+                ],
+                'usage_resets_at',
+            ],
+        ]);
+
+        $data = $response->json('data');
+
+        $this->assertEquals('Standard', $data['plan_name']);
+        $this->assertEquals(20.00, $data['price']);
+        $this->assertEquals('USD', $data['currency']);
+        $this->assertEquals('monthly', $data['billing_cycle']);
+        $this->assertEquals('Active', $data['status']);
+        $this->assertEquals(3, $data['project_usage']['current']);
+        $this->assertEquals(10, $data['project_usage']['limit']);
+    }
+
+    public function test_current_subscription_returns_404_when_no_subscription(): void
+    {
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_active' => true,
+            'plan_id' => null,
+        ]);
+
+        $response = $this->actingAs($user, 'supabase')
+            ->getJson('/api/plans/current-subscription');
+
+        $response->assertNotFound();
+        $response->assertJson([
+            'error' => true,
+            'message' => 'No active subscription found.',
+        ]);
+    }
+
+    public function test_current_subscription_shows_cancelled_status_on_grace_period(): void
+    {
+        $plan = Plan::factory()->create([
+            'name' => 'Premium',
+            'price' => 50.00,
+            'limit' => 25,
+            'currency' => 'USD',
+            'billing_cycle' => BillingCycle::Monthly,
+            'stripe_price_id' => 'price_test_456',
+        ]);
+
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_active' => true,
+            'plan_id' => $plan->id,
+        ]);
+
+        // Create subscription on grace period (cancelled but still active)
+        $user->subscriptions()->create([
+            'type' => 'default',
+            'stripe_id' => 'sub_test_456',
+            'stripe_status' => 'active',
+            'stripe_price' => $plan->stripe_price_id,
+            'quantity' => 1,
+            'trial_ends_at' => null,
+            'ends_at' => now()->addDays(7), // Grace period
+        ]);
+
+        $response = $this->actingAs($user, 'supabase')
+            ->getJson('/api/plans/current-subscription');
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals('Cancelled', $data['status']);
+        $this->assertNotNull($data['next_billing_date']);
+    }
+
+    public function test_current_subscription_calculates_project_usage_correctly(): void
+    {
+        $plan = Plan::factory()->create([
+            'name' => 'Basic',
+            'price' => 10.00,
+            'limit' => 5,
+            'currency' => 'USD',
+            'billing_cycle' => BillingCycle::Monthly,
+            'stripe_price_id' => 'price_test_789',
+        ]);
+
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_active' => true,
+            'plan_id' => $plan->id,
+        ]);
+
+        // Create 5 projects (at limit)
+        Project::factory()->count(5)->create(['user_id' => $user->id]);
+
+        $user->subscriptions()->create([
+            'type' => 'default',
+            'stripe_id' => 'sub_test_789',
+            'stripe_status' => 'active',
+            'stripe_price' => $plan->stripe_price_id,
+            'quantity' => 1,
+            'trial_ends_at' => null,
+            'ends_at' => null,
+        ]);
+
+        $response = $this->actingAs($user, 'supabase')
+            ->getJson('/api/plans/current-subscription');
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(5, $data['project_usage']['current']);
+        $this->assertEquals(5, $data['project_usage']['limit']);
+    }
+
+    public function test_current_subscription_returns_yearly_billing_cycle(): void
+    {
+        $plan = Plan::factory()->create([
+            'name' => 'Enterprise',
+            'price' => 200.00,
+            'limit' => 100,
+            'currency' => 'USD',
+            'billing_cycle' => BillingCycle::Yearly,
+            'stripe_price_id' => 'price_test_yearly',
+        ]);
+
+        $user = User::factory()->create([
+            'role' => UserRole::USER,
+            'is_active' => true,
+            'plan_id' => $plan->id,
+        ]);
+
+        $user->subscriptions()->create([
+            'type' => 'default',
+            'stripe_id' => 'sub_test_yearly',
+            'stripe_status' => 'active',
+            'stripe_price' => $plan->stripe_price_id,
+            'quantity' => 1,
+            'trial_ends_at' => null,
+            'ends_at' => null,
+        ]);
+
+        $response = $this->actingAs($user, 'supabase')
+            ->getJson('/api/plans/current-subscription');
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals('yearly', $data['billing_cycle']);
+        $this->assertEquals(200.00, $data['price']);
     }
 }
