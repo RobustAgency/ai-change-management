@@ -138,7 +138,6 @@ class User extends Authenticatable
 
     public function syncStripeSubscription(string $stripeSubscriptionId): void
     {
-        \info("Syncing Stripe subscription for user ID {$this->id} with Stripe subscription ID {$stripeSubscriptionId}");
         $subscription = $this->stripe()->subscriptions->retrieve($stripeSubscriptionId, []);
         $this->subscriptions()->updateOrCreate(
             ['stripe_id' => $subscription->id],
@@ -153,14 +152,11 @@ class User extends Authenticatable
                 'ends_at' => $subscription->cancel_at ? \Carbon\Carbon::createFromTimestamp($subscription->cancel_at) : null,
             ]
         );
-        \info("Updated subscription record for user ID {$this->id}");
-
         foreach ($subscription->items->data as $item) {
             $this->subscription('default')->items()->updateOrCreate(
                 ['stripe_id' => $item->id],
                 ['stripe_product' => $item->price->product, 'stripe_price' => $item->price->id, 'quantity' => $item->quantity]
             );
         }
-        \info("Synced subscription items for user ID {$this->id}");
     }
 }

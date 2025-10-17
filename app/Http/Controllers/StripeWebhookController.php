@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Stripe\Exception\SignatureVerificationException;
 use App\Http\Handlers\PaymentSucceededWebhookHandler;
 use App\Http\Handlers\CheckoutSessionCompletedHandler;
+use App\Http\Handlers\CustomerSubscriptionUpdateHandler;
 
 class StripeWebhookController extends Controller
 {
@@ -23,6 +24,11 @@ class StripeWebhookController extends Controller
             [
                 'name' => 'checkout.session.completed',
                 'handler' => CheckoutSessionCompletedHandler::class,
+                'callback' => secure_url('/api/webhooks'),
+            ],
+            [
+                'name' => 'customer.subscription.updated',
+                'handler' => CustomerSubscriptionUpdateHandler::class,
                 'callback' => secure_url('/api/webhooks'),
             ],
         ];

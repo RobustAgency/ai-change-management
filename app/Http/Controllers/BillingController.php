@@ -83,7 +83,7 @@ class BillingController extends Controller
         // Swap plan based on price difference
         if ($subscription->active() && ! $plan->isSameAsSubscription($subscription)) {
             $currentPlan = Plan::currentPlanFor($subscription);
-            if ($currentPlan && $currentPlan->isUpgradeTo($plan)) {
+            if ($currentPlan && $currentPlan->price < $plan->price) {
                 $planUpgraded = $this->upgradeSubscription->execute($user, $plan);
 
                 if ($planUpgraded) {
@@ -96,7 +96,6 @@ class BillingController extends Controller
                     ]);
                 }
             }
-
             $planDowngraded = $this->downgradeSubscription->execute($user, $plan);
 
             if ($planDowngraded) {
