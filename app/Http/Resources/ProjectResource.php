@@ -32,7 +32,6 @@ class ProjectResource extends JsonResource
             'stakeholders' => $this->stakeholders,
             'client_organization' => $this->client_organization,
             'status' => $this->status,
-            'is_editable' => $this->isEditable(),
             'media' => $this->whenLoaded('media', function () {
                 return $this->media->map(function ($media) {
                     return $media->getUrl();

@@ -40,9 +40,6 @@ class Project extends Model implements HasMedia
         'content_generation_status' => ProjectContentStatus::class,
     ];
 
-    // @phpstan-ignore rules.modelAppends
-    protected $appends = ['is_editable'];
-
     /**
      * Get the user that owns the project
      *
@@ -71,21 +68,6 @@ class Project extends Model implements HasMedia
     public function getClientLogoUrlAttribute(): ?string
     {
         return $this->getFirstMediaUrl('client_logos') ?: null;
-    }
-
-    public function hasContentGenerated(): bool
-    {
-        return $this->aiContent()->exists();
-    }
-
-    public function getIsEditableAttribute(): bool
-    {
-        return ! $this->hasContentGenerated();
-    }
-
-    public function isEditable(): bool
-    {
-        return $this->getIsEditableAttribute();
     }
 
     public function markContentGenerationStarted(): void
