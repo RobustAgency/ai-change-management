@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Plan;
 use App\Enums\BillingCycle;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class PlanSeeder extends Seeder
 {
@@ -18,41 +18,38 @@ class PlanSeeder extends Seeder
                 'name' => 'Basic',
                 'description' => 'Basic plan with essential features',
                 'limit' => 5,
-                'price' => 10.00,
-                'billing_cycle' => BillingCycle::Monthly,
-                'currency' => 'usd',
-                'stripe_price_id' => config('cashier.prices.basic'),
-                'active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-
+                'price' => 29.99,
+                'stripe_key' => 'basic',
             ],
             [
                 'name' => 'Standard',
                 'description' => 'Standard plan with additional features',
                 'limit' => 10,
-                'price' => 20.00,
-                'billing_cycle' => BillingCycle::Monthly,
-                'currency' => 'usd',
-                'stripe_price_id' => config('cashier.prices.standard'),
-                'active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'price' => 59.99,
+                'stripe_key' => 'standard',
             ],
             [
                 'name' => 'Premium',
                 'description' => 'Premium plan with all features',
                 'limit' => 15,
-                'price' => 30.00,
-                'billing_cycle' => BillingCycle::Monthly,
-                'currency' => 'usd',
-                'stripe_price_id' => config('cashier.prices.premium'),
-                'active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'price' => 99.99,
+                'stripe_key' => 'premium',
             ],
         ];
 
-        DB::table('plans')->insert($plans);
+        foreach ($plans as $plan) {
+            Plan::updateOrCreate(
+                ['name' => $plan['name']],
+                [
+                    'description' => $plan['description'],
+                    'limit' => $plan['limit'],
+                    'price' => $plan['price'],
+                    'billing_cycle' => BillingCycle::Monthly,
+                    'currency' => 'usd',
+                    'stripe_price_id' => config("cashier.prices.{$plan['stripe_key']}"),
+                    'active' => true,
+                ]
+            );
+        }
     }
 }
