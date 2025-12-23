@@ -24,8 +24,8 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background-color: #ffffff;
+            color: #333;
             padding: 40px 30px;
             text-align: center;
         }
@@ -179,11 +179,12 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <span class="icon">🎉</span>
-            <h1>Content Ready!</h1>
+             <img src="{{ url('storage/logo.png') }}" alt="Innovative Dialogues® Logo" style="max-width:220px;height:auto;">
         </div>
         
         <div class="content">
+            <h1 style="text-align: center; font-size: 28px; font-weight: 600; color: #2d3748; margin: 0 0 30px 0;">Content Ready!</h1>
+            
             <div class="greeting">
                 Hello {{ $user->name }}!
             </div>
@@ -192,6 +193,10 @@
                 Great news! The AI-generated content for your project 
                 <span class="project-name">"{{ $project->name }}"</span> 
                 has been successfully generated and is ready for your review.
+            </div>
+            
+            <div class="main-message">
+                <a href="{{ url('/login') }}" style="color: #667eea; text-decoration: none; font-weight: 600;">Login to your account</a> to access your project content.
             </div>
             
             <div class="content-list">
@@ -215,14 +220,14 @@
             </div>
             
             <div class="footer-message">
-                You can now review, customize, and implement the generated content to ensure it perfectly aligns with your change management objectives. Each piece of content has been crafted specifically for your project requirements.
+                Each asset has been crafted specifically based on your project requirements and input. You may now, review, customize, and implement the generated content to ensure it aligns with your specific change management or communications objectives.
             </div>
         </div>
         
         <div class="footer">
-            <div class="logo">Innovative Dialogues</div>
+            <div class="logo">Innovative Dialogs®</div>
             <p>Transforming organizations through intelligent change management</p>
-            <p>© {{ date('Y') }} Innovative Dialogues. All rights reserved.</p>
+            <p>© {{ date('Y') }} Innovative Dialogs®. All rights reserved.</p>
         </div>
     </div>
 </body>
