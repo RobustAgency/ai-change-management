@@ -227,7 +227,7 @@
         <div class="footer">
             <div class="logo">Innovative Dialogs®</div>
             <p>Transforming organizations through intelligent change management</p>
-            <p>© {{ date('Y') }} Innovative Dialogs®. All rights reserved.</p>
+            <p>©  {{ date('Y') }} Life Vision, LLC – Innovative Dialogs®.  All rights reserved.</p>
         </div>
     </div>
 </body>
