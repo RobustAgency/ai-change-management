@@ -179,7 +179,7 @@
 <body>
     <div class="email-container">
         <div class="header">
-             <img src="{{ url('storage/logo.png') }}" alt="Innovative Dialogues® Logo" style="max-width:220px;height:auto;">
+             <img src="{{ url('logo.png') }}" alt="Innovative Dialogues® Logo" style="max-width:220px;height:auto;">
         </div>
         
         <div class="content">
@@ -196,7 +196,7 @@
             </div>
             
             <div class="main-message">
-                <a href="{{ url('/login') }}" style="color: #667eea; text-decoration: none; font-weight: 600;">Login to your account</a> to access your project content.
+                <a href="{{ env('FRONTEND_URL') }}" style="color: #667eea; text-decoration: none; font-weight: 600;">Login to your account</a> to access your project content.
             </div>
             
             <div class="content-list">
