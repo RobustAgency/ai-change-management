@@ -35,6 +35,8 @@ class ProjectContentGeneratedNotification extends Notification implements Should
      */
     public function toMail(User $notifiable): MailMessage
     {
+        \info('Preparing project content generated email for user: '.$notifiable->id.' and project: '.$this->project->id);
+
         return (new MailMessage)
             ->subject('Your Project Content is Ready!')
             ->view('emails.user.project-content-generated', [

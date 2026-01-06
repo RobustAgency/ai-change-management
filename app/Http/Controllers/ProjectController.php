@@ -57,6 +57,7 @@ class ProjectController extends Controller
      */
     public function generateContent(Project $project): JsonResponse
     {
+        \info('Generating content for project: '.$project->id);
         $project->markContentGenerationStarted();
         GenerateProjectContentJob::dispatch($project);
 

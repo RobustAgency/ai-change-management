@@ -20,6 +20,7 @@ class ProjectContentGenerator
 
     public function generateContent(Project $project): void
     {
+        \info('Starting content generation pipeline for project: '.$project->id);
         DB::beginTransaction();
 
         try {
@@ -34,6 +35,7 @@ class ProjectContentGenerator
                 ->thenReturn();
 
             DB::commit();
+            \info('Content generation pipeline completed for project: '.$project->id);
             ProjectContentGenerated::dispatch($project);
         } catch (Throwable $th) {
             DB::rollBack();

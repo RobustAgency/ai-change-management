@@ -13,6 +13,7 @@ class SendProjectContentGeneratedNotification implements ShouldQueue
      */
     public function handle(ProjectContentGenerated $event): void
     {
+        \info('Sending project content generated notification for project: '.$event->project->id);
         $project = $event->project;
         $user = $project->user;
 
