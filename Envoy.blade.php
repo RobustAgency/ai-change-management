@@ -1,21 +1,25 @@
-@servers(['staging' => 'dev@144.126.254.193']);
+@servers(['staging' => 'dev@144.126.254.193', 'production' => 'app-user@3.227.157.199'])
 
 @setup
-    $repository = 'git@github.com-repo-12:RobustAgency/ai-change-management';
-    $branch = 'staging';
-    $app_dir = '/var/www/ai-change-management';
+    $env = isset($env) ? $env : 'staging';
+    $repository = ($env == 'production') ? 'git@github.com:RobustAgency/ai-change-management' : 'git@github.com-repo-12:RobustAgency/ai-change-management';
+    $branch = $env == 'production' ? 'main' : 'staging';
+    $app_dir = $env == 'production' ? '/var/www/app' : '/var/www/ai-change-management';
     $release = date('Y_m_d_H_i');
     $releases_dir = $app_dir . '/releases';
     $new_release_dir = $releases_dir .'/'. $release;
 @endsetup
 
-@story('deploy', ['on' => 'staging'])
+@story('deploy', ['on' => $env])
     clone_repository
     run_composer
-    update_symlinks
     writeable
+    maintenance_down
+    update_symlinks
     migrate
+    optimize
     restart_queues
+    maintenance_up
     cleanup_old_releases
 @endstory
 
@@ -23,8 +27,6 @@
     echo 'Cloning repository'
     [ -d {{ $releases_dir }} ] || mkdir -p {{ $releases_dir }}
     git clone --depth 1 --branch {{ $branch }} {{ $repository }} {{ $new_release_dir }}
-    cd {{ $new_release_dir }}
-    git reset --hard {{ $commit }}
 @endtask
 
 @task('writeable')
@@ -46,7 +48,7 @@
 
     echo "Starting deployment ({{ $release }})"
     cd {{ $new_release_dir }}
-    composer install --prefer-dist --no-scripts -q -o
+    composer install --prefer-dist --no-scripts -q -o {{ $env == 'production' ? '--no-dev' : '' }}
 @endtask
 
 @task('update_symlinks')
@@ -57,8 +59,21 @@
     echo 'Linking current release'
     ln -nfs {{ $new_release_dir }} {{ $app_dir }}/current
 
-    echo 'Symling storage to public folder'
+    echo 'Symlinking storage to public folder'
     cd {{ $new_release_dir }} && php artisan storage:link
+@endtask
+
+@task('maintenance_down')
+    echo "Putting application in maintenance mode..."
+    if [ -d {{ $app_dir }}/current ]; then
+        cd {{ $app_dir }}/current && php artisan down --secret="bypass-token"
+    fi
+@endtask
+
+@task('optimize')
+    echo "Optimizing application..."
+    cd {{ $new_release_dir }}
+    php artisan optimize
 @endtask
 
 @task('restart_queues')
@@ -66,9 +81,14 @@
     php artisan queue:restart
 @endtask
 
+@task('maintenance_up')
+    echo "Bringing application back up..."
+    cd {{ $new_release_dir }}
+    php artisan up
+@endtask
 
 @task('cleanup_old_releases')
     echo "Cleaning up old releases..."
     cd {{ $releases_dir }}
-    find . -maxdepth 1 -type d -mtime +7 -exec rm -rf {} \;
+    ls -dt */ | tail -n +6 | xargs -d '\n' rm -rf
 @endtask

@@ -26,7 +26,7 @@ class SetupStripeAccountCommand extends Command
      */
     public function handle(SetupStripeAccount $setupStripeAccount): void
     {
-        $productName = 'MVP Skeleton';
+        $productName = 'Innovative AI Dialogues';
 
         $plans = [
             ['name' => 'Basic',    'amount' => 1000],
